@@ -1,0 +1,18 @@
+{
+  "short_name": "ManojTraders",
+  "name": "Manoj Traders - Quality Products. Trusted Service.",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#09090b",
+  "theme_color": "#D4AF37",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "description": "Premium Full Stack Luxury eCommerce Application for Manoj Traders"
+}

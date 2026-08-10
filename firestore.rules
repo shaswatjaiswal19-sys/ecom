@@ -1,0 +1,140 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if request is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check admin role
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.role == "admin";
+    }
+
+    // Helper function to check owner access
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // 1. Users Collection
+    match /users/{userId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+    }
+
+    // 2. Products Collection (Public Read, Admin Write)
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 3. Categories Collection (Public Read, Admin Write)
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 4. Brands Collection (Public Read, Admin Write)
+    match /brands/{brandId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 5. Orders Collection (Customer owns order or Admin)
+    match /orders/{orderId} {
+      allow create: if true; // Guest or Auth user can place orders
+      allow read, update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // 6. Cart Collection
+    match /cart/{cartId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 7. Wishlist Collection
+    match /wishlist/{wishlistId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 8. Reviews Collection (Public Read, Authenticated Write)
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // 9. Addresses Collection
+    match /addresses/{addressId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 10. Payments Collection
+    match /payments/{paymentId} {
+      allow read, write: if isAuthenticated() || isAdmin();
+    }
+
+    // 11. Inventory Collection
+    match /inventory/{itemId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 12. Notifications Collection
+    match /notifications/{notifId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 13. Coupons Collection (Public Read, Admin Write)
+    match /coupons/{couponId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 14. Returns Collection
+    match /returns/{returnId} {
+      allow read, create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // 15. Refunds Collection
+    match /refunds/{refundId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // 16. Analytics Collection (Admin only)
+    match /analytics/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // 17. Blogs Collection (Public Read, Admin Write)
+    match /blogs/{blogId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 18. Banners Collection (Public Read, Admin Write)
+    match /banners/{bannerId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 19. Staff Collection (Admin only)
+    match /staff/{staffId} {
+      allow read, write: if isAdmin();
+    }
+
+    // 20. Roles Collection (Admin only)
+    match /roles/{roleId} {
+      allow read, write: if isAdmin();
+    }
+
+    // 21. Settings Collection (Public Read, Admin Write)
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}
