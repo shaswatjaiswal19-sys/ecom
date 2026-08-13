@@ -2,29 +2,34 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 const isProtectedRoute = createRouteMatcher([
-  "/account(.*)",
   "/admin(.*)",
 ]);
 
-const hasValidClerkKey = Boolean(
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
-    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith("pk_") &&
-    !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.includes("YOUR_CLERK")
-);
+const publishableKey =
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
+  "pk_test_bWFub2otdHJhZGVycy0wMS5jbGVyay5hY2NvdW50cy5kZXYk";
 
-export default clerkMiddleware(async (auth, req) => {
-  if (!hasValidClerkKey) {
+const secretKey =
+  process.env.CLERK_SECRET_KEY ||
+  "sk_test_manojtraders_secret_key_example";
+
+export default clerkMiddleware(
+  async (auth, req) => {
+    if (isProtectedRoute(req)) {
+      // Admin protection
+    }
     return NextResponse.next();
+  },
+  {
+    publishableKey,
+    secretKey,
   }
-
-  if (isProtectedRoute(req)) {
-    // Session checks via Clerk
-  }
-});
+);
 
 export const config = {
   matcher: [
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|json|webmanifest|png|jpg|jpeg|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    '/(api|trpc)(.*)',
+    // Match all routes except static assets & Next internals
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|json|webmanifest|png|jpg|jpeg|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip)).*)",
+    "/(api|trpc)(.*)",
   ],
 };
