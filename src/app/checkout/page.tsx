@@ -14,8 +14,6 @@ import { CheckCircle2, MapPin, CreditCard, ShieldCheck, Truck, ArrowRight, Chevr
 import Image from "next/image";
 import toast from "react-hot-toast";
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 import { useAuthStore } from "@/lib/authStore";
 
 const addressSchema = z.object({
