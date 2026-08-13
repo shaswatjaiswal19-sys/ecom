@@ -6,6 +6,7 @@ import { useAuthStore } from "@/lib/authStore";
 import { Package, MapPin, Heart, Wallet, RotateCcw, ArrowRight, TrendingUp, Star } from "lucide-react";
 import { MOCK_ORDERS } from "@/lib/mockData";
 import { formatCurrency } from "@/lib/utils";
+import DeleteAccountButton from "@/app/account/DeleteAccountButton";
 
 const QUICK_STATS = [
   { label: "Total Orders", value: "3", icon: Package, color: "text-blue-500", bg: "bg-blue-500/10" },
@@ -116,6 +117,7 @@ export default function AccountDashboardPage() {
           </Link>
         ))}
       </div>
+      <DeleteAccountButton />
     </div>
   );
 }

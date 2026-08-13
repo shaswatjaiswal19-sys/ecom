@@ -41,3 +41,42 @@ export async function signInWithFirebaseGoogle() {
 }
 
 export default app;
+
+/**
+ * Re-authenticate the current user using a popup (Google provider).
+ * Required for sensitive operations like deleting the account.
+ */
+export async function reauthenticateWithPopup() {
+  if (!auth.currentUser) throw new Error('No authenticated user');
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    return result.user;
+  } catch (error) {
+    console.error('Re-authentication failed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Delete the currently signed‑in user.
+ * If Firebase requires recent login, it will attempt to re‑authenticate via popup first.
+ */
+export async function deleteCurrentUser() {
+  if (!auth.currentUser) throw new Error('No authenticated user');
+  try {
+    await auth.currentUser.delete();
+    console.info('User account deleted successfully');
+  } catch (error: any) {
+    // Firebase throws 'auth/requires-recent-login' if recent login missing
+    if (error.code === 'auth/requires-recent-login') {
+      console.warn('Re-authentication required before deletion');
+      await reauthenticateWithPopup();
+      // Retry deletion after successful re‑auth
+      await auth.currentUser?.delete();
+    } else {
+      console.error('Failed to delete user:', error);
+      throw error;
+    }
+  }
+}
+

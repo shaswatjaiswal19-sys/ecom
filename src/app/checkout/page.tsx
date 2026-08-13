@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { useCartStore, useShippingStore } from "@/lib/store";
 import { createOrderInStore } from "@/lib/firestore";
 import { formatCurrency } from "@/lib/utils";
-import { useUser } from "@clerk/nextjs";
+// Clerk user hook removed - not needed for checkout
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +14,8 @@ import { CheckCircle2, MapPin, CreditCard, ShieldCheck, Truck, ArrowRight, Chevr
 import Image from "next/image";
 import toast from "react-hot-toast";
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 import { useAuthStore } from "@/lib/authStore";
 import { signInWithFirebaseGoogle } from "@/lib/firebase";
 
@@ -41,16 +43,9 @@ const PAYMENT_OPTIONS: { id: PaymentMethod; label: string; icon: string; descrip
 const STEPS = ["Authentication", "Shipping Address", "Payment", "Review Order"];
 
 export default function CheckoutPage() {
-  const { user: clerkUser } = useUser();
+  const clerkUser = null; // Clerk user not used
   const { user: authUser, isAuthenticated, login, syncWithClerk } = useAuthStore();
   const router = useRouter();
-
-  // Sync Clerk auth safely inside useEffect if user logs in via Clerk
-  useEffect(() => {
-    if (clerkUser && (!isAuthenticated || authUser?.id !== clerkUser.id)) {
-      syncWithClerk(clerkUser);
-    }
-  }, [clerkUser, isAuthenticated, authUser?.id, syncWithClerk]);
 
   const activeUser = authUser || (clerkUser ? {
     id: clerkUser.id,

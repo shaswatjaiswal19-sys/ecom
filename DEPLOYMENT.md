@@ -55,3 +55,8 @@ firebase deploy --only functions
 - [x] PWA Manifest & Service Worker operational.
 - [x] Responsive layout verified across Desktop, Tablet, and Mobile.
 - [x] Recharts dashboard data rendering correctly.
+
+---
+**Made by Shaswat Jaiswal**
+**Contact:** 9170215145
+---
