@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { useCartStore, useShippingStore } from "@/lib/store";
 import { createOrderInStore } from "@/lib/firestore";
 import { formatCurrency } from "@/lib/utils";
-// Clerk user hook removed - not needed for checkout
+import { useUser, SignInButton } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,7 +17,6 @@ import toast from "react-hot-toast";
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 import { useAuthStore } from "@/lib/authStore";
-import { signInWithFirebaseGoogle } from "@/lib/firebase";
 
 const addressSchema = z.object({
   fullName: z.string().min(2, "Full name required"),
@@ -40,23 +39,42 @@ const PAYMENT_OPTIONS: { id: PaymentMethod; label: string; icon: string; descrip
   { id: "COD", label: "Cash on Delivery", icon: "💵", description: "Pay with cash upon delivery at your doorstep" },
 ];
 
-const STEPS = ["Authentication", "Shipping Address", "Payment", "Review Order"];
+const GUEST_STEPS = ["Authentication", "Shipping Address", "Payment", "Review Order"];
+const AUTH_STEPS = ["Shipping Address", "Payment", "Review Order"];
 
 export default function CheckoutPage() {
-  const clerkUser = null; // Clerk user not used
+  const { user: clerkUser } = useUser();
   const { user: authUser, isAuthenticated, login, syncWithClerk } = useAuthStore();
   const router = useRouter();
 
-  const activeUser = authUser || (clerkUser ? {
+  // Sync Clerk user with local store whenever Clerk is logged in
+  useEffect(() => {
+    if (clerkUser) {
+      syncWithClerk(clerkUser);
+    }
+  }, [clerkUser, syncWithClerk]);
+
+  const activeUser = clerkUser ? {
     id: clerkUser.id,
-    fullName: clerkUser.fullName || "Customer",
+    fullName: clerkUser.fullName || [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") || "Customer",
     email: clerkUser.primaryEmailAddress?.emailAddress || "customer@manojtraders.com",
     phone: clerkUser.primaryPhoneNumber?.phoneNumber || "",
-  } : null);
+  } : authUser;
 
-  const isUserLoggedIn = Boolean(isAuthenticated || clerkUser || activeUser);
+  const isUserLoggedIn = Boolean(clerkUser || isAuthenticated || activeUser);
 
+  // If user is already logged in, start directly at Shipping Address (step 1).
   const [step, setStep] = useState(isUserLoggedIn ? 1 : 0);
+
+  // Ensure step state synchronizes after client rehydration
+  useEffect(() => {
+    if (isUserLoggedIn && step === 0) {
+      setStep(1);
+    } else if (!isUserLoggedIn && step === 0) {
+      setStep(0);
+    }
+  }, [isUserLoggedIn, step]);
+
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("UPI");
   const [upiUtr, setUpiUtr] = useState("");
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
@@ -74,28 +92,23 @@ export default function CheckoutPage() {
     defaultValues: {
       fullName: activeUser?.fullName || "",
       phone: activeUser?.phone || "",
+      streetAddress: "",
+      city: "",
+      state: "",
+      pincode: "",
       country: "India",
     },
   });
 
-  const handleCheckoutGoogleSignIn = async () => {
-    try {
-      const gUser = await signInWithFirebaseGoogle();
-      login({
-        id: gUser.uid,
-        email: gUser.email || "google-user@manojtraders.com",
-        fullName: gUser.displayName || "Google Customer",
-        avatar: gUser.photoURL || undefined,
-      });
-      form.setValue("fullName", gUser.displayName || "Google Customer");
-      toast.success(`Logged in as ${gUser.displayName || "Customer"}`);
-      setStep(1);
-    } catch (err: any) {
-      if (err?.code !== "auth/popup-closed-by-user") {
-        toast.error(err.message || "Google Sign-In failed");
-      }
+  // Keep form values populated if user logs in or hydrates
+  useEffect(() => {
+    if (activeUser?.fullName && !form.getValues("fullName")) {
+      form.setValue("fullName", activeUser.fullName);
     }
-  };
+    if (activeUser?.phone && !form.getValues("phone")) {
+      form.setValue("phone", activeUser.phone);
+    }
+  }, [activeUser, form]);
 
   const handleQuickCheckoutLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,27 +196,31 @@ export default function CheckoutPage() {
 
         {/* Progress Steps */}
         <div className="flex items-center gap-0 mb-10 overflow-x-auto pb-2">
-          {STEPS.map((s, i) => (
-            <div key={s} className="flex items-center">
-              <div className="flex items-center gap-2">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black border-2 transition-all ${
-                    i < step
-                      ? "border-emerald-500 bg-emerald-500 text-white"
-                      : i === step
-                      ? "border-amber-500 bg-amber-500 text-black"
-                      : "border-zinc-300 dark:border-zinc-700 text-zinc-400"
-                  }`}
-                >
-                  {i < step ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
+          {(isUserLoggedIn ? AUTH_STEPS : GUEST_STEPS).map((s, i) => {
+            const activeStepIdx = isUserLoggedIn ? step - 1 : step;
+            const stepsList = isUserLoggedIn ? AUTH_STEPS : GUEST_STEPS;
+            return (
+              <div key={s} className="flex items-center">
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black border-2 transition-all ${
+                      i < activeStepIdx
+                        ? "border-emerald-500 bg-emerald-500 text-white"
+                        : i === activeStepIdx
+                        ? "border-amber-500 bg-amber-500 text-black"
+                        : "border-zinc-300 dark:border-zinc-700 text-zinc-400"
+                    }`}
+                  >
+                    {i < activeStepIdx ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
+                  </div>
+                  <span className={`text-xs font-bold whitespace-nowrap ${i === activeStepIdx ? "text-zinc-900 dark:text-white" : "text-zinc-400"}`}>
+                    {s}
+                  </span>
                 </div>
-                <span className={`text-xs font-bold whitespace-nowrap ${i === step ? "text-zinc-900 dark:text-white" : "text-zinc-400"}`}>
-                  {s}
-                </span>
+                {i < stepsList.length - 1 && <ChevronRight className="w-5 h-5 text-zinc-300 dark:text-zinc-700 mx-2 flex-shrink-0" />}
               </div>
-              {i < STEPS.length - 1 && <ChevronRight className="w-5 h-5 text-zinc-300 dark:text-zinc-700 mx-2 flex-shrink-0" />}
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -225,36 +242,18 @@ export default function CheckoutPage() {
                   </p>
                 </div>
 
-                {/* Google Sign In */}
-                <button
-                  type="button"
-                  onClick={handleCheckoutGoogleSignIn}
-                  className="w-full py-3.5 px-4 rounded-2xl bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white font-bold text-sm hover:bg-zinc-50 dark:hover:bg-zinc-750 transition-all flex items-center justify-center gap-3 border border-zinc-200 dark:border-zinc-700 shadow-sm"
+                {/* Clerk Modal / Portal Sign In */}
+                <Link
+                  href="/sign-in?redirect_url=/checkout"
+                  className="w-full py-3.5 px-4 rounded-2xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 font-bold text-sm hover:bg-amber-500 hover:text-black transition-all flex items-center justify-center gap-3 border border-zinc-200 dark:border-zinc-700 shadow-sm"
                 >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
-                    <path
-                      fill="#4285F4"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                    />
-                  </svg>
-                  <span>1-Click Sign In with Google</span>
-                </button>
+                  <ShieldCheck className="w-5 h-5 text-amber-500" />
+                  <span>Sign In with Clerk Account (Google / Email / Phone)</span>
+                </Link>
 
                 <div className="relative flex py-1 items-center">
                   <div className="flex-grow border-t border-zinc-200 dark:border-zinc-800"></div>
-                  <span className="flex-shrink mx-4 text-xs text-zinc-400 font-semibold uppercase">Or Instant Mobile / Email</span>
+                  <span className="flex-shrink mx-4 text-xs text-zinc-400 font-semibold uppercase">Or Instant Quick Checkout</span>
                   <div className="flex-grow border-t border-zinc-200 dark:border-zinc-800"></div>
                 </div>
 
