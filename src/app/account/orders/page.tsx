@@ -49,11 +49,16 @@ const REASON_OPTIONS = [
 ];
 
 export default function OrdersPage() {
-  const { orders: storeOrders, requestCancellation } = useOrderStore();
+  const { orders: rawStoreOrders, requestCancellation } = useOrderStore();
   const { addToCart } = useCartStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState("All");
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+
+  // Deduplicate orders by unique ID and order number
+  const storeOrders = Array.from(
+    new Map(rawStoreOrders.map((o) => [o.id || o.orderNumber, o])).values()
+  );
 
   // Cancellation Modal State
   const [cancellingOrder, setCancellingOrder] = useState<any | null>(null);

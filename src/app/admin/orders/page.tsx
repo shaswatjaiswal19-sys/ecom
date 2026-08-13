@@ -57,10 +57,15 @@ function getNextAction(status: OrderStatus): { nextStatus: OrderStatus; label: s
 }
 
 export default function AdminOrdersPage() {
-  const { orders, updateOrderStatus } = useOrderStore();
+  const { orders: rawOrders, updateOrderStatus } = useOrderStore();
   const [activeTab, setActiveTab] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "cards">("list");
+
+  // Deduplicate orders by unique ID and order number
+  const orders = Array.from(
+    new Map(rawOrders.map((o) => [o.id || o.orderNumber, o])).values()
+  );
 
   // Category counts
   const totalCount = orders.length;
@@ -235,12 +240,12 @@ export default function AdminOrdersPage() {
       ) : viewMode === "list" ? (
         /* 1. COMPACT ORDERS LIST VIEW */
         <div className="space-y-3">
-          {filteredOrders.map((o) => {
+          {filteredOrders.map((o, idx) => {
             const nextAction = getNextAction(o.status);
 
             return (
               <div
-                key={o.id}
+                key={`${o.id || o.orderNumber}-${idx}`}
                 className="bg-white dark:bg-zinc-900 rounded-2xl p-4 sm:p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm hover:shadow-md transition-all flex flex-col lg:flex-row lg:items-center justify-between gap-4"
               >
                 {/* Order ID & Customer Info */}

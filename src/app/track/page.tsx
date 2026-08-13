@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useOrderStore } from "@/lib/store";
 import { formatCurrency } from "@/lib/utils";
+import { MOCK_ORDERS } from "@/lib/mockData";
 import { Search, Package, Truck, CheckCircle2, Clock, XCircle, ShieldCheck, MapPin, Calendar, ArrowRight, Download, Phone, Map } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -35,7 +36,8 @@ export default function PublicOrderTrackerPage() {
     }
 
     const query = searchQuery.trim().toLowerCase();
-    const found = storeOrders.find(
+    const allOrders = [...storeOrders, ...MOCK_ORDERS];
+    const found = allOrders.find(
       (o) =>
         o.orderNumber.toLowerCase() === query ||
         o.id.toLowerCase() === query ||
@@ -53,10 +55,10 @@ export default function PublicOrderTrackerPage() {
     }
   };
 
-  const activeOrder = searchedOrder || storeOrders[0];
-  const cfg = STATUS_CONFIG[activeOrder.status] || STATUS_CONFIG["Placed"];
+  const activeOrder = searchedOrder || storeOrders[0] || MOCK_ORDERS[0];
+  const cfg = STATUS_CONFIG[activeOrder?.status || "Placed"] || STATUS_CONFIG["Placed"];
   const StatusIcon = cfg.icon;
-  const currentStepIdx = ORDER_STATUS_STEPS.indexOf(activeOrder.status);
+  const currentStepIdx = ORDER_STATUS_STEPS.indexOf(activeOrder?.status || "Placed");
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 py-12 px-4 sm:px-6 lg:px-8">

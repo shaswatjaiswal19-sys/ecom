@@ -366,7 +366,12 @@ export const useOrderStore = create<OrderState>()(
     (set) => ({
       orders: MOCK_ORDERS,
       addOrder: (newOrder) =>
-        set((state) => ({ orders: [newOrder, ...state.orders] })),
+        set((state) => {
+          const filtered = state.orders.filter(
+            (o) => o.id !== newOrder.id && o.orderNumber !== newOrder.orderNumber
+          );
+          return { orders: [newOrder, ...filtered] };
+        }),
       updateOrderStatus: (orderId, newStatus, note) =>
         set((state) => ({
           orders: state.orders.map((o) => {

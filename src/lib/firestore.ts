@@ -222,7 +222,15 @@ export async function createOrderInStore(orderData: Partial<Order>): Promise<Ord
   addDoc(collection(db, "orders"), sanitizedDoc).catch(() => {});
 
   // Add order to persistent store & local array for instant admin fulfillment view
-  MOCK_ORDERS.unshift(newOrder);
+  const existingIdx = MOCK_ORDERS.findIndex(
+    (o) => o.id === newOrder.id || o.orderNumber === newOrder.orderNumber
+  );
+  if (existingIdx === -1) {
+    MOCK_ORDERS.unshift(newOrder);
+  } else {
+    MOCK_ORDERS[existingIdx] = newOrder;
+  }
+
   try {
     const { useOrderStore } = require("./store");
     useOrderStore.getState().addOrder(newOrder);

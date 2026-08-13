@@ -145,8 +145,8 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody>
-              {recentOrders.map((order) => (
-                <tr key={order.id} className="border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-950 transition-colors">
+              {recentOrders.map((order, idx) => (
+                <tr key={`${order.id}-${idx}`} className="border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-950 transition-colors">
                   <td className="px-6 py-4 text-xs font-mono font-bold text-amber-600 dark:text-amber-400">
                     {order.orderNumber}
                   </td>
