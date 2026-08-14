@@ -7,8 +7,9 @@ import {
   createBrandInFirestore,
   deleteBrandInFirestore,
 } from "@/lib/firestore";
+import { requireServerAdmin } from "@/lib/serverAuth";
 
-// GET /api/categories - Returns categories and brands
+// GET /api/categories - Returns categories and brands (Public read)
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -29,9 +30,14 @@ export async function GET(request: Request) {
   }
 }
 
-// POST /api/categories - Create a new category or brand
+// POST /api/categories - Create a new category or brand (Admin Only)
 export async function POST(request: Request) {
   try {
+    const authGuard = await requireServerAdmin();
+    if (!authGuard.authorized) {
+      return authGuard.response!;
+    }
+
     const body = await request.json();
     const { type, ...data } = body;
 
@@ -56,9 +62,14 @@ export async function POST(request: Request) {
   }
 }
 
-// DELETE /api/categories - Delete a category or brand by ID
+// DELETE /api/categories - Delete a category or brand by ID (Admin Only)
 export async function DELETE(request: Request) {
   try {
+    const authGuard = await requireServerAdmin();
+    if (!authGuard.authorized) {
+      return authGuard.response!;
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
     const type = searchParams.get("type");

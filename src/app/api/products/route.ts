@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getProductsFromStore, createProductInFirestore, updateProductInFirestore, deleteProductInFirestore } from "@/lib/firestore";
+import { requireServerAdmin } from "@/lib/serverAuth";
 
 // GET /api/products - Returns list of products with optional category/search filtering
 export async function GET(request: Request) {
@@ -29,9 +30,14 @@ export async function GET(request: Request) {
   }
 }
 
-// POST /api/products - Create a new product (Admin)
+// POST /api/products - Create a new product (Admin Only)
 export async function POST(request: Request) {
   try {
+    const authGuard = await requireServerAdmin();
+    if (!authGuard.authorized) {
+      return authGuard.response!;
+    }
+
     const body = await request.json();
 
     if (!body.name || !body.price) {
@@ -45,9 +51,14 @@ export async function POST(request: Request) {
   }
 }
 
-// PUT /api/products - Update an existing product
+// PUT /api/products - Update an existing product (Admin Only)
 export async function PUT(request: Request) {
   try {
+    const authGuard = await requireServerAdmin();
+    if (!authGuard.authorized) {
+      return authGuard.response!;
+    }
+
     const body = await request.json();
     const { id, ...updates } = body;
 
@@ -62,9 +73,14 @@ export async function PUT(request: Request) {
   }
 }
 
-// DELETE /api/products - Delete product by ID
+// DELETE /api/products - Delete product by ID (Admin Only)
 export async function DELETE(request: Request) {
   try {
+    const authGuard = await requireServerAdmin();
+    if (!authGuard.authorized) {
+      return authGuard.response!;
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 

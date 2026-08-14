@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getOrdersFromStore, createOrderInStore, updateOrderStatusInStore } from "@/lib/firestore";
+import { requireServerAdmin } from "@/lib/serverAuth";
 
 // GET /api/orders - Retrieve list of orders (Filtered by userId or orderId)
 export async function GET(request: Request) {
@@ -30,7 +31,7 @@ export async function GET(request: Request) {
   }
 }
 
-// POST /api/orders - Place a new order
+// POST /api/orders - Place a new order (Authenticated customers)
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -52,9 +53,14 @@ export async function POST(request: Request) {
   }
 }
 
-// PATCH /api/orders - Update order fulfillment status (Admin)
+// PATCH /api/orders - Update order fulfillment status (Admin Only)
 export async function PATCH(request: Request) {
   try {
+    const authGuard = await requireServerAdmin();
+    if (!authGuard.authorized) {
+      return authGuard.response!;
+    }
+
     const body = await request.json();
     const { orderId, status, note } = body;
 
