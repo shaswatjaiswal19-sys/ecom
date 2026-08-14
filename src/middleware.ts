@@ -5,29 +5,17 @@ const isAdminRoute = createRouteMatcher([
   "/admin(.*)",
 ]);
 
-const publishableKey =
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
-  "pk_test_c3RhYmxlLWxlZWNoLTg5LmNsZXJrLmFjY291bnRzLmRldiQ";
-
-const secretKey =
-  process.env.CLERK_SECRET_KEY ||
-  "sk_test_BwI9MnM94NimhjGMlaBgEb3fqOlEt2pem4bjqgVpgu";
-
 export default clerkMiddleware(
   async (auth, req) => {
     if (isAdminRoute(req)) {
       const authSession = await auth();
 
-      // 1. If not signed in at all, redirect to Clerk sign-in
+      // If not signed in at all, redirect to Clerk sign-in
       if (!authSession.userId) {
         return authSession.redirectToSignIn({ returnBackUrl: req.url });
       }
     }
     return NextResponse.next();
-  },
-  {
-    publishableKey,
-    secretKey,
   }
 );
 
