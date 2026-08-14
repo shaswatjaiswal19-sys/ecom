@@ -32,6 +32,8 @@ export default function SignInPage() {
         {/* Pure Clerk Sign In Box */}
         <div className="flex justify-center">
           <SignIn
+            fallbackRedirectUrl="/"
+            signUpFallbackRedirectUrl="/"
             appearance={{
               elements: {
                 card: "bg-zinc-900/90 border border-zinc-800 shadow-2xl backdrop-blur-xl rounded-3xl p-6",
