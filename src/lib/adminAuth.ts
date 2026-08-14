@@ -2,50 +2,34 @@
  * Role-Based Access Control (RBAC) - Clerk Authorization Guard
  *
  * A user is ONLY recognized as an Administrator if:
- * 1. Their Clerk Public Metadata has { "role": "admin" } or { "isAdmin": true } (assigned in Clerk Dashboard)
- * 2. OR their Clerk Organization membership has role "org:admin"
- * 3. OR their email is explicitly listed in NEXT_PUBLIC_ADMIN_EMAILS environment variable
+ * You have explicitly set in Clerk Dashboard -> Users -> Public Metadata:
+ * { "role": "admin" } or { "isAdmin": true }
  *
- * Normal users with no Clerk admin role will ALWAYS return false.
+ * All normal users, guests, and unregistered users ALWAYS return false.
  */
 export function isUserAdmin(clerkUser: any): boolean {
   if (!clerkUser) return false;
 
-  // 1. Check Clerk publicMetadata (Assigned by Administrator in Clerk Dashboard)
+  // 1. Check Clerk publicMetadata role (Set manually in Clerk Dashboard)
   const role = (clerkUser.publicMetadata?.role as string)?.toLowerCase();
   const isAdminFlag = Boolean(clerkUser.publicMetadata?.isAdmin);
-  if (role === "admin" || role === "superadmin" || isAdminFlag) {
+  
+  if (role === "admin" || role === "superadmin" || isAdminFlag === true) {
     return true;
   }
 
-  // 2. Check Clerk Organization memberships
-  if (Array.isArray(clerkUser.organizationMemberships)) {
+  // 2. Check Clerk Organization memberships (if using Clerk Organizations)
+  if (Array.isArray(clerkUser.organizationMemberships) && clerkUser.organizationMemberships.length > 0) {
     const isOrgAdmin = clerkUser.organizationMemberships.some(
       (m: any) => m.role === "org:admin" || m.role === "admin"
     );
     if (isOrgAdmin) return true;
   }
 
-  // 3. Optional: Check explicit NEXT_PUBLIC_ADMIN_EMAILS if configured in environment
-  const configuredAdminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "")
-    .split(",")
-    .map((e) => e.trim().toLowerCase())
-    .filter((e) => Boolean(e) && !e.includes("manojtraders.com")); // Ignore mock placeholders
-
-  if (configuredAdminEmails.length > 0) {
-    const userEmails: string[] = [];
-    if (clerkUser.primaryEmailAddress?.emailAddress) {
-      userEmails.push(clerkUser.primaryEmailAddress.emailAddress.toLowerCase());
-    }
-    if (Array.isArray(clerkUser.emailAddresses)) {
-      clerkUser.emailAddresses.forEach((item: any) => {
-        const email = typeof item === "string" ? item : item?.emailAddress;
-        if (email) userEmails.push(email.toLowerCase());
-      });
-    }
-    if (userEmails.some((e) => configuredAdminEmails.includes(e))) {
-      return true;
-    }
+  // 3. Check session claims metadata (for Server-side validation)
+  const sessionRole = (clerkUser.metadata?.role as string)?.toLowerCase();
+  if (sessionRole === "admin" || sessionRole === "superadmin") {
+    return true;
   }
 
   return false;
