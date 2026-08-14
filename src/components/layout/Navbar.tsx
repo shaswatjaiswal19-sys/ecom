@@ -55,7 +55,7 @@ export default function Navbar() {
   const { itemCount: rawItemCount } = getCartTotal();
   const itemCount = mounted ? rawItemCount : 0;
   const wishlistCount = mounted ? wishlist.length : 0;
-  const isAdmin = mounted && Boolean(isUserAdmin(clerkUser) || isUserAdmin(authUser));
+  const isAdmin = mounted && Boolean(isUserAdmin(clerkUser));
 
   if (pathname.startsWith("/admin") || pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up")) {
     return null;
