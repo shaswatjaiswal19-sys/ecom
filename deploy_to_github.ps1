@@ -31,8 +31,8 @@ if (-not (Test-Path ".git")) {
 Write-Host "`n[2/4] Staging updated files..." -ForegroundColor Yellow
 git add -A
 
-Write-Host "`n[3/4] Creating commit with fixes..." -ForegroundColor Yellow
-git commit -m "Deploy: Fix React hooks, DOM unmount, and production deployment configuration"
+Write-Host "`n[3/4] Creating commit with fixes and production assets..." -ForegroundColor Cyan
+git commit -m "Production: Strict Clerk RBAC, hide admin button for normal users, fix Clerk props"
 
 Write-Host "`n[4/4] Setting main branch and pushing to GitHub..." -ForegroundColor Yellow
 git branch -M main

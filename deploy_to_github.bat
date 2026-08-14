@@ -43,7 +43,7 @@ git add -A
 
 echo.
 echo [3/4] Creating commit with fixes and production assets...
-git commit -m "Deploy: Fix React hooks, DOM unmount, and production deployment configuration"
+git commit -m "Production: Strict Clerk RBAC, hide admin button for normal users, fix Clerk props"
 
 echo.
 echo [4/4] Setting main branch and pushing to GitHub...

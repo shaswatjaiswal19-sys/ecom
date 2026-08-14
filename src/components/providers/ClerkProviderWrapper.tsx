@@ -13,8 +13,9 @@ export default function ClerkProviderWrapper({ children }: { children: ReactNode
       publishableKey={publishableKey}
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
-      afterSignInUrl="/"
-      afterSignUpUrl="/"
+      fallbackRedirectUrl="/"
+      signUpFallbackRedirectUrl="/"
+      signInFallbackRedirectUrl="/"
     >
       {children}
     </ClerkProvider>
