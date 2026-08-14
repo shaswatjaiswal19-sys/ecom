@@ -24,7 +24,6 @@ export const metadata: Metadata = {
     "Shaswat Ecom — India's premier supermarket for 100% farm-fresh organic produce, aged Basmati rice, A2 Gir cow Bilona ghee, cold-pressed oils, and heritage spices delivered in 24 hours.",
   keywords: ["Shaswat Ecom", "Organic Supermarket", "Basmati Rice", "A2 Ghee", "Fresh Mangoes", "Cold Pressed Oil"],
   authors: [{ name: "Shaswat Ecom" }],
-  manifest: "/manifest.json",
   openGraph: {
     type: "website",
     locale: "en_IN",
