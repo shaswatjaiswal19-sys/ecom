@@ -364,7 +364,7 @@ export default function Kirana3DStoreCanvas() {
       window.removeEventListener("touchend", onPointerUp);
       window.removeEventListener("resize", handleResize);
       cancelAnimationFrame(animationFrameId);
-      if (container && renderer.domElement) {
+      if (container && renderer.domElement && renderer.domElement.parentNode === container) {
         container.removeChild(renderer.domElement);
       }
       renderer.dispose();

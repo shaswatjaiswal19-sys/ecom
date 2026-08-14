@@ -5,7 +5,7 @@ import { ReactNode } from "react";
 
 const publishableKey =
   process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
-  "pk_test_bWFub2otdHJhZGVycy0wMS5jbGVyay5hY2NvdW50cy5kZXYk";
+  "pk_test_c3RhYmxlLWxlZWNoLTg5LmNsZXJrLmFjY291bnRzLmRldiQ";
 
 export default function ClerkProviderWrapper({ children }: { children: ReactNode }) {
   return (

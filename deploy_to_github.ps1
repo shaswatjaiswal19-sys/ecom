@@ -1,11 +1,17 @@
 param(
-    [string]$RepoUrl
+    [string]$RepoUrl = "https://github.com/shaswatjaiswal19-sys/ecom.git"
 )
 
 Write-Host "========================================================" -ForegroundColor Cyan
-Write-Host "  MANOJ TRADERS / SHASWAT E-COM - GITHUB PUSH HELPER" -ForegroundColor Cyan
+Write-Host "  SHASWAT E-COMMERCE - GITHUB PUSH & VERCEL DEPLOY" -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host ""
+
+# Clean up duplicate next.config.ts if next.config.js exists to ensure clean Vercel Next.js build
+if ((Test-Path "next.config.ts") -and (Test-Path "next.config.js")) {
+    Write-Host "[INFO] Removing duplicate next.config.ts for clean build..." -ForegroundColor Yellow
+    Remove-Item "next.config.ts" -Force -ErrorAction SilentlyContinue
+}
 
 # Check if git is available
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
@@ -14,40 +20,34 @@ if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
     exit 1
 }
 
-# Prompt for repo URL if not provided
-if (-not $RepoUrl) {
-    $RepoUrl = Read-Host "Enter your GitHub Repository URL (e.g., https://github.com/username/e-commerce.git)"
-}
+Write-Host "Target Repository: $RepoUrl" -ForegroundColor Cyan
+Write-Host ""
 
-if ([string]::IsNullOrWhiteSpace($RepoUrl)) {
-    Write-Host "[ERROR] GitHub Repository URL cannot be empty!" -ForegroundColor Red
-    exit 1
-}
-
-Write-Host "`n[1/4] Initializing Git repository..." -ForegroundColor Yellow
+Write-Host "[1/4] Checking Git repository..." -ForegroundColor Yellow
 if (-not (Test-Path ".git")) {
     git init
 }
 
-Write-Host "`n[2/4] Staging files..." -ForegroundColor Yellow
-git add .
+Write-Host "`n[2/4] Staging updated files..." -ForegroundColor Yellow
+git add -A
 
-Write-Host "`n[3/4] Creating commit..." -ForegroundColor Yellow
-git commit -m "Production deployment build for Vercel"
+Write-Host "`n[3/4] Creating commit with fixes..." -ForegroundColor Yellow
+git commit -m "Deploy: Fix React hooks, DOM unmount, and production deployment configuration"
 
-Write-Host "`n[4/4] Setting main branch and pushing to $RepoUrl..." -ForegroundColor Yellow
+Write-Host "`n[4/4] Setting main branch and pushing to GitHub..." -ForegroundColor Yellow
 git branch -M main
 git remote remove origin 2>$null
 git remote add origin $RepoUrl
-git push -u origin main
+git push -u origin main --force
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "`n========================================================" -ForegroundColor Green
     Write-Host "  SUCCESS! Code pushed to GitHub successfully." -ForegroundColor Green
-    Write-Host "  Next: Go to https://vercel.com/new and import your repo!" -ForegroundColor Green
+    Write-Host "  Repo: https://github.com/shaswatjaiswal19-sys/ecom" -ForegroundColor Green
+    Write-Host "  Your Vercel deployment will auto-build now!" -ForegroundColor Green
     Write-Host "========================================================" -ForegroundColor Green
 } else {
     Write-Host "`n========================================================" -ForegroundColor Red
-    Write-Host "  Push failed. Check your GitHub authentication / URL." -ForegroundColor Red
+    Write-Host "  Push encountered an issue. Check your GitHub authentication." -ForegroundColor Red
     Write-Host "========================================================" -ForegroundColor Red
 }

@@ -42,11 +42,7 @@ export default function Navbar() {
   const { theme, setTheme } = useTheme();
   const { user: authUser, isAuthenticated, logout, syncWithClerk } = useAuthStore();
 
-  let clerkUser: any = null;
-  try {
-    const clerk = useUser();
-    clerkUser = clerk?.user;
-  } catch {}
+  const { user: clerkUser } = useUser();
 
   useEffect(() => {
     setMounted(true);

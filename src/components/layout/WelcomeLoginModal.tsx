@@ -30,12 +30,7 @@ export default function WelcomeLoginModal() {
 
   const { isAuthenticated, login, syncWithClerk } = useAuthStore();
   
-  // Safely sync with Clerk if active
-  let clerkUser: any = null;
-  try {
-    const clerk = useUser();
-    clerkUser = clerk?.user;
-  } catch {}
+  const { user: clerkUser } = useUser();
 
   useEffect(() => {
     if (clerkUser && !isAuthenticated) {

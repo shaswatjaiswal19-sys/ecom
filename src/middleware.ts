@@ -7,11 +7,11 @@ const isProtectedRoute = createRouteMatcher([
 
 const publishableKey =
   process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
-  "pk_test_bWFub2otdHJhZGVycy0wMS5jbGVyay5hY2NvdW50cy5kZXYk";
+  "pk_test_c3RhYmxlLWxlZWNoLTg5LmNsZXJrLmFjY291bnRzLmRldiQ";
 
 const secretKey =
   process.env.CLERK_SECRET_KEY ||
-  "sk_test_manojtraders_secret_key_example";
+  "sk_test_BwI9MnM94NimhjGMlaBgEb3fqOlEt2pem4bjqgVpgu";
 
 export default clerkMiddleware(
   async (auth, req) => {
