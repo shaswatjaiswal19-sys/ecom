@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { SignedIn, SignedOut, UserButton, useUser } from "@clerk/nextjs";
 import { useAuthStore } from "@/lib/authStore";
+import { isUserAdmin } from "@/lib/adminAuth";
 import toast from "react-hot-toast";
 
 export default function Navbar() {
@@ -54,6 +55,7 @@ export default function Navbar() {
   const { itemCount: rawItemCount } = getCartTotal();
   const itemCount = mounted ? rawItemCount : 0;
   const wishlistCount = mounted ? wishlist.length : 0;
+  const isAdmin = mounted && Boolean(isUserAdmin(clerkUser) || isUserAdmin(authUser));
 
   if (pathname.startsWith("/admin") || pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up")) {
     return null;
@@ -178,13 +180,15 @@ export default function Navbar() {
             <Link href="/track" prefetch={true} className="hover:text-amber-500 transition-colors flex items-center gap-1">
               <Truck className="w-3.5 h-3.5 text-amber-500" /> Track Order
             </Link>
-            <Link
-              href="/admin"
-              prefetch={true}
-              className="text-xs px-3 py-1.5 rounded-full bg-amber-500 text-black hover:bg-amber-400 font-bold transition-all shadow-sm"
-            >
-              Admin Console
-            </Link>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                prefetch={true}
+                className="text-xs px-3 py-1.5 rounded-full bg-amber-500 text-black hover:bg-amber-400 font-bold transition-all shadow-sm flex items-center gap-1"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" /> Admin Console
+              </Link>
+            )}
           </nav>
 
           {/* Action Buttons */}
@@ -351,9 +355,11 @@ export default function Navbar() {
               <Link href="/contact" onClick={() => setMobileMenuOpen(false)} className="hover:text-amber-500">
                 Contact
               </Link>
-              <Link href="/admin" onClick={() => setMobileMenuOpen(false)} className="hover:text-amber-500 text-amber-500">
-                Admin Console
-              </Link>
+              {isAdmin && (
+                <Link href="/admin" onClick={() => setMobileMenuOpen(false)} className="hover:text-amber-500 text-amber-500 flex items-center gap-1.5 font-bold">
+                  <ShieldCheck className="w-4 h-4" /> Admin Console
+                </Link>
+              )}
             </nav>
           </div>
         )}

@@ -124,8 +124,7 @@ export default function Footer() {
             <li><Link href="/account/orders" className="hover:text-white transition-colors">Track Orders</Link></li>
             <li><Link href="/account/returns" className="hover:text-white transition-colors">Fresh Returns & Refunds</Link></li>
             <li><Link href="/account/tickets" className="hover:text-white transition-colors">Support Portal</Link></li>
-            <li><Link href="/faq" className="hover:text-white transition-colors">Grocery FAQ</Link></li>
-            <li><Link href="/admin" className="hover:text-amber-400 transition-colors font-bold">Admin Portal</Link></li>
+            <li><Link href="/support" className="hover:text-white transition-colors">Help & Concierge</Link></li>
           </ul>
         </div>
 

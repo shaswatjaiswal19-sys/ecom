@@ -116,16 +116,13 @@ export default function HomePage() {
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
 
-  // Global Page Scroll Animation Hooks
-  const pageContainerRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: pageContainerRef });
+  // Global Page Scroll Animation Hooks (SSR-Safe)
+  const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
 
   // Hero Section Parallax
-  const heroRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress: heroScroll } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
-  const heroOpacity = useTransform(heroScroll, [0, 0.9], [1, 0]);
-  const heroY = useTransform(heroScroll, [0, 1], ["0%", "18%"]);
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.25], [1, 0]);
+  const heroY = useTransform(scrollYProgress, [0, 0.25], ["0%", "12%"]);
 
   const displayCategories = storeCategories.length ? storeCategories : MOCK_CATEGORIES;
   const flashSaleProducts = storeProducts.filter((p) => p.isFlashSale);
@@ -133,7 +130,7 @@ export default function HomePage() {
   const flashSaleEnd = "2026-12-31T23:59:59Z";
 
   return (
-    <div ref={pageContainerRef} className="relative overflow-hidden selection:bg-amber-500 selection:text-black">
+    <div className="relative overflow-hidden selection:bg-amber-500 selection:text-black">
       {/* 1. TOP SCROLL PROGRESS BAR */}
       <motion.div
         style={{ scaleX }}
@@ -141,7 +138,7 @@ export default function HomePage() {
       />
 
       {/* ===== HERO SECTION WITH 350° 3D KIRANA ORBIT SHOWCASE ===== */}
-      <section ref={heroRef} className="relative min-h-[92vh] flex items-center overflow-hidden py-10 lg:py-16">
+      <section className="relative min-h-[92vh] flex items-center overflow-hidden py-10 lg:py-16">
         {/* Ambient Kirana Gold & Emerald Atmospheric Glows */}
         <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-emerald-500/5 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900 pointer-events-none" />
         <div className="absolute top-1/4 right-0 w-[550px] h-[550px] rounded-full bg-amber-500/10 blur-[130px] pointer-events-none" />

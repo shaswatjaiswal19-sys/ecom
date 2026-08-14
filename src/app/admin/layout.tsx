@@ -24,12 +24,7 @@ const ADMIN_NAV = [
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
-const ALLOWED_ADMIN_EMAILS = (
-  process.env.NEXT_PUBLIC_ADMIN_EMAILS ||
-  "admin@manojtraders.com,shaswat@gmail.com,shaswatjaiswal@gmail.com,concierge@manojtraders.com"
-)
-  .split(",")
-  .map((e) => e.trim().toLowerCase());
+import { isUserAdmin } from "@/lib/adminAuth";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -38,25 +33,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const userEmail = user?.emailAddresses?.[0]?.emailAddress?.toLowerCase();
-
-  // Clerk Metadata & Role Checks
-  const clerkRole = (user?.publicMetadata?.role as string)?.toLowerCase();
-  const clerkIsAdmin = Boolean(user?.publicMetadata?.isAdmin);
-  const clerkOrgAdmin = user?.organizationMemberships?.some(
-    (m) => m.role === "org:admin" || m.role === "admin"
-  );
-
-  const isClerkAuthorizedAdmin = Boolean(
-    clerkRole === "admin" ||
-    clerkRole === "superadmin" ||
-    clerkIsAdmin ||
-    clerkOrgAdmin
-  );
-
-  const isEmailAuthorizedAdmin = Boolean(userEmail && ALLOWED_ADMIN_EMAILS.includes(userEmail));
-
-  // User is authorized if Clerk metadata gives access OR email is in allowed list
-  const isAdmin = Boolean(isSignedIn && (isClerkAuthorizedAdmin || isEmailAuthorizedAdmin));
+  const isAdmin = Boolean(isSignedIn && isUserAdmin(user));
   if (!isLoaded) {
     return (
       <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-6 space-y-4 animate-pulse">

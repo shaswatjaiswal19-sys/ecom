@@ -16,7 +16,7 @@ const secretKey =
 export default clerkMiddleware(
   async (auth, req) => {
     if (isProtectedRoute(req)) {
-      // Admin protection
+      await auth.protect();
     }
     return NextResponse.next();
   },
