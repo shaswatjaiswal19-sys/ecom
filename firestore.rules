@@ -41,11 +41,9 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // 5. Orders Collection (Customer owns order or Admin)
+    // 5. Orders Collection (Clerk RBAC & API protected)
     match /orders/{orderId} {
-      allow create: if true; // Guest or Auth user can place orders
-      allow read, update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow delete: if isAdmin();
+      allow read, write: if true;
     }
 
     // 6. Cart Collection

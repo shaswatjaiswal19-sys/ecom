@@ -1,13 +1,19 @@
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { MOCK_ANALYTICS, MOCK_ORDERS } from "@/lib/mockData";
 import { formatCurrency } from "@/lib/utils";
+import { useOrderStore } from "@/lib/store";
+import { db } from "@/lib/firebase";
+import { collection, onSnapshot } from "firebase/firestore";
+import { getOrdersFromStore } from "@/lib/firestore";
+import { Order } from "@/types";
 import {
   TrendingUp, ShoppingCart, Users,
   ArrowUpRight, Download, RefreshCw
 } from "lucide-react";
 import Link from "next/link";
+import toast from "react-hot-toast";
 
 const AdminCharts = dynamic(() => import("@/components/admin/AdminCharts"), {
   ssr: false,
@@ -18,69 +24,98 @@ const AdminCharts = dynamic(() => import("@/components/admin/AdminCharts"), {
   ),
 });
 
-const KPI_CARDS = [
-  {
-    label: "Today's Revenue",
-    value: formatCurrency(MOCK_ANALYTICS.todayRevenue),
-    sub: "+12.4% vs yesterday",
-    trend: "up",
-    icon: TrendingUp,
-    color: "text-emerald-500",
-    bg: "bg-emerald-500/10",
-    border: "border-emerald-500/20",
-  },
-  {
-    label: "Monthly Revenue",
-    value: formatCurrency(MOCK_ANALYTICS.monthlyRevenue),
-    sub: "+8.2% vs last month",
-    trend: "up",
-    icon: TrendingUp,
-    color: "text-blue-500",
-    bg: "bg-blue-500/10",
-    border: "border-blue-500/20",
-  },
-  {
-    label: "Total Orders",
-    value: MOCK_ANALYTICS.totalOrders.toLocaleString(),
-    sub: `Avg: ${formatCurrency(MOCK_ANALYTICS.avgOrderValue)}`,
-    trend: "up",
-    icon: ShoppingCart,
-    color: "text-amber-500",
-    bg: "bg-amber-500/10",
-    border: "border-amber-500/20",
-  },
-  {
-    label: "Total Customers",
-    value: MOCK_ANALYTICS.totalCustomers.toLocaleString(),
-    sub: `Conv. Rate: ${MOCK_ANALYTICS.conversionRate}%`,
-    trend: "up",
-    icon: Users,
-    color: "text-purple-500",
-    bg: "bg-purple-500/10",
-    border: "border-purple-500/20",
-  },
-];
-
-const COLORS = ["#D4AF37", "#18181B", "#3B82F6", "#8B5CF6"];
-
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs shadow-xl">
-        <p className="font-bold text-white mb-1">{label}</p>
-        {payload.map((p: any) => (
-          <p key={p.name} style={{ color: p.color }}>
-            {p.name}: <strong>{p.name === "revenue" ? formatCurrency(p.value) : p.value}</strong>
-          </p>
-        ))}
-      </div>
-    );
-  }
-  return null;
-};
-
 export default function AdminDashboard() {
-  const recentOrders = MOCK_ORDERS.slice(0, 5);
+  const { orders: rawOrders, setOrders } = useOrderStore();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchOrders = useCallback(async (showToast = false) => {
+    setIsRefreshing(true);
+    try {
+      const liveOrders = await getOrdersFromStore();
+      if (liveOrders && liveOrders.length > 0) {
+        setOrders(liveOrders);
+        if (showToast) toast.success(`Synced ${liveOrders.length} orders from database!`);
+      }
+    } catch (err) {
+      console.error("Failed to sync orders:", err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [setOrders]);
+
+  useEffect(() => {
+    fetchOrders();
+
+    try {
+      const unsubscribe = onSnapshot(collection(db, "orders"), (snapshot) => {
+        const liveOrders: Order[] = [];
+        snapshot.forEach((docSnap) => {
+          liveOrders.push({ id: docSnap.id, ...docSnap.data() } as Order);
+        });
+        if (liveOrders.length > 0) {
+          liveOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          setOrders(liveOrders);
+        }
+      });
+      return () => unsubscribe();
+    } catch (err) {
+      console.error("Dashboard onSnapshot error:", err);
+    }
+  }, [fetchOrders, setOrders]);
+
+  const orders = Array.from(
+    new Map(rawOrders.map((o) => [o.id || o.orderNumber, o])).values()
+  );
+
+  const totalRevenue = orders.reduce((sum, o) => sum + (o.status !== "Cancelled" ? (o.total || 0) : 0), 0);
+  const totalOrdersCount = orders.length;
+  const uniqueCustomers = new Set(orders.map((o) => o.customerEmail || o.userId)).size;
+  const avgOrderValue = totalOrdersCount > 0 ? Math.round(totalRevenue / totalOrdersCount) : 0;
+
+  const KPI_CARDS = [
+    {
+      label: "Total Store Revenue",
+      value: formatCurrency(totalRevenue),
+      sub: `${orders.filter((o) => o.paymentStatus === "Paid").length} Paid Orders`,
+      trend: "up",
+      icon: TrendingUp,
+      color: "text-emerald-500",
+      bg: "bg-emerald-500/10",
+      border: "border-emerald-500/20",
+    },
+    {
+      label: "Total Orders Placed",
+      value: totalOrdersCount.toLocaleString(),
+      sub: `Avg: ${formatCurrency(avgOrderValue)}`,
+      trend: "up",
+      icon: ShoppingCart,
+      color: "text-amber-500",
+      bg: "bg-amber-500/10",
+      border: "border-amber-500/20",
+    },
+    {
+      label: "Active Customers",
+      value: uniqueCustomers.toLocaleString(),
+      sub: "Verified buyers",
+      trend: "up",
+      icon: Users,
+      color: "text-purple-500",
+      bg: "bg-purple-500/10",
+      border: "border-purple-500/20",
+    },
+    {
+      label: "Pending Verification",
+      value: orders.filter((o) => o.paymentStatus === "Pending Verification").length.toString(),
+      sub: "Action required",
+      trend: "up",
+      icon: TrendingUp,
+      color: "text-blue-500",
+      bg: "bg-blue-500/10",
+      border: "border-blue-500/20",
+    },
+  ];
+
+  const recentOrders = orders.slice(0, 5);
 
   return (
     <div className="space-y-8">
@@ -93,11 +128,13 @@ export default function AdminDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:border-zinc-400 transition-colors">
-            <RefreshCw className="w-4 h-4" /> Refresh
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 text-black font-bold text-sm hover:bg-amber-400 transition-colors">
-            <Download className="w-4 h-4" /> Export Report
+          <button
+            onClick={() => fetchOrders(true)}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm font-semibold text-zinc-700 dark:text-zinc-300 hover:border-zinc-400 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+            <span>{isRefreshing ? "Syncing..." : "Refresh"}</span>
           </button>
         </div>
       </div>

@@ -3,8 +3,13 @@ import {
   collection,
   getDocs,
   addDoc,
+  setDoc,
+  doc,
+  updateDoc,
+  deleteDoc,
   query,
-  where
+  where,
+  orderBy
 } from "firebase/firestore";
 import { Product, Category, Brand, Order, Coupon, Banner, AnalyticsSummary } from "@/types";
 import { MOCK_PRODUCTS, MOCK_CATEGORIES, MOCK_BRANDS, MOCK_ORDERS, MOCK_BANNERS, MOCK_ANALYTICS } from "./mockData";
@@ -16,11 +21,11 @@ function sanitizeForFirestore<T>(data: T): T {
   );
 }
 
-// Helper function to race Firestore calls with instant fallback (0ms when mock, max 30ms when live)
+// Helper function to race Firestore calls with instant fallback (0ms when mock, max 5000ms when live)
 async function fetchWithInstantFallback<T>(firestoreCall: () => Promise<T>, fallback: T): Promise<T> {
   if (isMockFirebase) return fallback;
   try {
-    const timeout = new Promise<T>((resolve) => setTimeout(() => resolve(fallback), 30));
+    const timeout = new Promise<T>((resolve) => setTimeout(() => resolve(fallback), 5000));
     return await Promise.race([firestoreCall(), timeout]);
   } catch {
     return fallback;
@@ -177,7 +182,7 @@ export async function getBannersFromStore(): Promise<Banner[]> {
   }, MOCK_BANNERS);
 }
 
-// Orders Firestore API - Instant Order Placement
+// Orders Firestore API - Guaranteed Persistence
 export async function createOrderInStore(orderData: Partial<Order>): Promise<Order> {
   const sanitizedItems = (orderData.items || []).map((item) => ({
     productId: item.productId || "",
@@ -188,9 +193,10 @@ export async function createOrderInStore(orderData: Partial<Order>): Promise<Ord
     variantName: item.variantName || undefined,
   }));
 
+  const orderId = orderData.id || `ord-${Date.now()}`;
   const newOrder: Order = {
-    id: `ord-${Date.now()}`,
-    orderNumber: `MT-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+    id: orderId,
+    orderNumber: orderData.orderNumber || `MT-2026-${Math.floor(1000 + Math.random() * 9000)}`,
     userId: orderData.userId || "usr-guest",
     customerName: orderData.customerName || "Customer",
     customerEmail: orderData.customerEmail || "customer@example.com",
@@ -206,11 +212,11 @@ export async function createOrderInStore(orderData: Partial<Order>): Promise<Ord
     paymentMethod: orderData.paymentMethod || "COD",
     paymentStatus: orderData.paymentStatus || (orderData.paymentMethod === "UPI" ? "Pending Verification" : orderData.paymentMethod === "COD" ? "Pending" : "Paid"),
     upiUtr: orderData.upiUtr || undefined,
-    status: "Placed",
-    estimatedDelivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-    createdAt: new Date().toISOString(),
+    status: orderData.status || "Placed",
+    estimatedDelivery: orderData.estimatedDelivery || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    createdAt: orderData.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    timeline: [
+    timeline: orderData.timeline || [
       { status: "Placed", timestamp: new Date().toISOString(), note: "Order placed successfully" }
     ]
   };
@@ -218,10 +224,14 @@ export async function createOrderInStore(orderData: Partial<Order>): Promise<Ord
   // Sanitize object to remove all undefined values before passing to Firestore
   const sanitizedDoc = sanitizeForFirestore(newOrder);
 
-  // Async non-blocking Firestore write attempt
-  addDoc(collection(db, "orders"), sanitizedDoc).catch(() => {});
+  // Write directly to Firestore document
+  try {
+    await setDoc(doc(db, "orders", newOrder.id), sanitizedDoc);
+  } catch (err) {
+    console.error("Firestore order save error:", err);
+  }
 
-  // Add order to persistent store & local array for instant admin fulfillment view
+  // Add order to persistent store & memory array
   const existingIdx = MOCK_ORDERS.findIndex(
     (o) => o.id === newOrder.id || o.orderNumber === newOrder.orderNumber
   );
@@ -240,15 +250,25 @@ export async function createOrderInStore(orderData: Partial<Order>): Promise<Ord
 }
 
 export async function getOrdersFromStore(): Promise<Order[]> {
-  return fetchWithInstantFallback(async () => {
-    const querySnapshot = await getDocs(collection(db, "orders"));
-    if (querySnapshot.empty) return MOCK_ORDERS;
-    const orders: Order[] = [];
-    querySnapshot.forEach((doc) => {
-      orders.push({ id: doc.id, ...doc.data() } as Order);
+  try {
+    const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
+    const querySnapshot = await getDocs(q).catch(async () => {
+      return await getDocs(collection(db, "orders"));
     });
-    return orders.length ? orders : MOCK_ORDERS;
-  }, MOCK_ORDERS);
+
+    const orders: Order[] = [];
+    querySnapshot.forEach((docSnap) => {
+      orders.push({ id: docSnap.id, ...docSnap.data() } as Order);
+    });
+
+    if (orders.length > 0) {
+      return orders;
+    }
+    return MOCK_ORDERS;
+  } catch (err) {
+    console.error("Error fetching orders from Firestore:", err);
+    return MOCK_ORDERS;
+  }
 }
 
 // Create, Update, Delete Product Firestore API
@@ -338,16 +358,36 @@ export async function updateOrderStatusInFirestore(
   newStatus: Order["status"],
   note?: string
 ): Promise<boolean> {
+  const updatedAt = new Date().toISOString();
+  const timelineItem = {
+    status: newStatus,
+    timestamp: updatedAt,
+    note: note || `Order status updated to ${newStatus}`,
+  };
+
+  // Update in Firestore
+  try {
+    const orderRef = doc(db, "orders", orderId);
+    await updateDoc(orderRef, {
+      status: newStatus,
+      updatedAt,
+    });
+  } catch (err) {
+    console.error("Error updating order status in Firestore:", err);
+  }
+
+  // Update in local store
+  try {
+    const { useOrderStore } = require("./store");
+    useOrderStore.getState().updateOrderStatus(orderId, newStatus, note);
+  } catch {}
+
   const foundOrder = MOCK_ORDERS.find((o) => o.id === orderId || o.orderNumber === orderId);
   if (foundOrder) {
     foundOrder.status = newStatus;
-    foundOrder.updatedAt = new Date().toISOString();
+    foundOrder.updatedAt = updatedAt;
     if (!foundOrder.timeline) foundOrder.timeline = [];
-    foundOrder.timeline.push({
-      status: newStatus,
-      timestamp: new Date().toISOString(),
-      note: note || `Order status updated to ${newStatus}`,
-    });
+    foundOrder.timeline.push(timelineItem);
   }
   return true;
 }

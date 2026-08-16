@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useOrderStore, useCartStore } from "@/lib/store";
+import { useAuthStore } from "@/lib/authStore";
+import { useUser } from "@clerk/nextjs";
+import { getOrdersFromStore } from "@/lib/firestore";
 import { formatCurrency } from "@/lib/utils";
 import {
   Package,
@@ -49,11 +52,21 @@ const REASON_OPTIONS = [
 ];
 
 export default function OrdersPage() {
-  const { orders: rawStoreOrders, requestCancellation } = useOrderStore();
+  const { user: clerkUser } = useUser();
+  const { user: localUser } = useAuthStore();
+  const { orders: rawStoreOrders, setOrders, requestCancellation } = useOrderStore();
   const { addToCart } = useCartStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState("All");
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+
+  useEffect(() => {
+    getOrdersFromStore().then((orders) => {
+      if (orders && orders.length > 0) {
+        setOrders(orders);
+      }
+    }).catch(() => {});
+  }, [setOrders]);
 
   // Deduplicate orders by unique ID and order number
   const storeOrders = Array.from(
@@ -72,8 +85,17 @@ export default function OrdersPage() {
 
   const filters = ["All", "On the Way", "Delivered", "Cancelled"];
 
+  const userEmail = clerkUser?.primaryEmailAddress?.emailAddress?.toLowerCase() || localUser?.email?.toLowerCase();
+  const userId = clerkUser?.id || localUser?.id;
+
   // Filter orders by status pill & search query
   const filteredOrders = storeOrders.filter((o) => {
+    const matchesUser = !userEmail && !userId ? true : (
+      o.userId === userId ||
+      (o.customerEmail && userEmail && o.customerEmail.toLowerCase() === userEmail) ||
+      o.userId === "usr-guest" || o.userId === "guest"
+    );
+
     const matchesFilter =
       filter === "All" ||
       (filter === "On the Way" && ["Placed", "Confirmed", "Packed", "Shipped", "Out for Delivery"].includes(o.status)) ||
@@ -85,7 +107,7 @@ export default function OrdersPage() {
       o.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
       o.items.some((item) => item.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    return matchesFilter && matchesSearch;
+    return matchesUser && matchesFilter && matchesSearch;
   });
 
   const handleReorder = (item: any) => {

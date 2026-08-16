@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useOrderStore } from "@/lib/store";
 import { Order, OrderStatus } from "@/types";
 import { formatCurrency } from "@/lib/utils";
+import { db } from "@/lib/firebase";
+import { collection, onSnapshot } from "firebase/firestore";
+import { getOrdersFromStore } from "@/lib/firestore";
 import {
   Package,
   Search,
@@ -25,6 +28,7 @@ import {
   LayoutList,
   LayoutGrid,
   ExternalLink,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -57,10 +61,47 @@ function getNextAction(status: OrderStatus): { nextStatus: OrderStatus; label: s
 }
 
 export default function AdminOrdersPage() {
-  const { orders: rawOrders, updateOrderStatus } = useOrderStore();
+  const { orders: rawOrders, setOrders, updateOrderStatus } = useOrderStore();
   const [activeTab, setActiveTab] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "cards">("list");
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchLatestOrders = useCallback(async (showToast = false) => {
+    setIsRefreshing(true);
+    try {
+      const liveOrders = await getOrdersFromStore();
+      if (liveOrders && liveOrders.length > 0) {
+        setOrders(liveOrders);
+        if (showToast) toast.success(`Synced ${liveOrders.length} orders from database!`);
+      }
+    } catch (err) {
+      console.error("Failed to fetch latest orders:", err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [setOrders]);
+
+  useEffect(() => {
+    fetchLatestOrders();
+
+    // Set up real-time listener for Firestore orders
+    try {
+      const unsubscribe = onSnapshot(collection(db, "orders"), (snapshot) => {
+        const liveOrders: Order[] = [];
+        snapshot.forEach((docSnap) => {
+          liveOrders.push({ id: docSnap.id, ...docSnap.data() } as Order);
+        });
+        if (liveOrders.length > 0) {
+          liveOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          setOrders(liveOrders);
+        }
+      });
+      return () => unsubscribe();
+    } catch (err) {
+      console.error("Firestore onSnapshot listener error:", err);
+    }
+  }, [fetchLatestOrders, setOrders]);
 
   // Deduplicate orders by unique ID and order number
   const orders = Array.from(
@@ -152,16 +193,27 @@ export default function AdminOrdersPage() {
           </p>
         </div>
 
-        {/* Search Bar */}
-        <div className="flex items-center gap-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl px-4 py-2.5 shadow-sm w-full md:w-80">
-          <Search className="w-4 h-4 text-zinc-400 flex-shrink-0" />
-          <input
-            type="text"
-            placeholder="Search Order #, Customer, UTR..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-transparent text-xs font-semibold text-zinc-900 dark:text-white outline-none placeholder:text-zinc-400"
-          />
+        {/* Search Bar & Refresh Button */}
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="flex items-center gap-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl px-4 py-2.5 shadow-sm w-full md:w-80">
+            <Search className="w-4 h-4 text-zinc-400 flex-shrink-0" />
+            <input
+              type="text"
+              placeholder="Search Order #, Customer, UTR..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-transparent text-xs font-semibold text-zinc-900 dark:text-white outline-none placeholder:text-zinc-400"
+            />
+          </div>
+          <button
+            onClick={() => fetchLatestOrders(true)}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs shadow-sm transition-all cursor-pointer flex-shrink-0 disabled:opacity-50"
+            title="Sync latest orders from database"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+            <span>{isRefreshing ? "Syncing..." : "Sync DB"}</span>
+          </button>
         </div>
       </div>
 

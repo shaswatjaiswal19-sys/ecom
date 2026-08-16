@@ -355,6 +355,7 @@ export const useBrandStore = create<BrandState>()(
 // Persistent Orders Store
 interface OrderState {
   orders: Order[];
+  setOrders: (orders: Order[]) => void;
   addOrder: (newOrder: Order) => void;
   updateOrderStatus: (orderId: string, status: OrderStatus, note?: string) => void;
   requestCancellation: (orderId: string, reason: string, refundDetails: any) => void;
@@ -365,6 +366,7 @@ export const useOrderStore = create<OrderState>()(
   persist(
     (set) => ({
       orders: MOCK_ORDERS,
+      setOrders: (orders) => set({ orders }),
       addOrder: (newOrder) =>
         set((state) => {
           const filtered = state.orders.filter(

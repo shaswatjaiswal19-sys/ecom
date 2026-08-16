@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useCartStore, useShippingStore } from "@/lib/store";
 import { createOrderInStore } from "@/lib/firestore";
 import { formatCurrency } from "@/lib/utils";
+import { Order } from "@/types";
 import { useUser, SignInButton } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -138,15 +139,19 @@ export default function CheckoutPage() {
       const addressData = form.getValues();
       const shippingAddress = { ...addressData, id: `addr-${Date.now()}`, type: "Home" as const };
 
-      const order = await createOrderInStore({
-        userId: activeUser?.id || "guest",
-        customerName: addressData.fullName,
-        customerEmail: activeUser?.email || "customer@manojtraders.com",
-        customerPhone: addressData.phone,
+      const resolvedUserId = clerkUser?.id || activeUser?.id || "guest";
+      const resolvedEmail = clerkUser?.primaryEmailAddress?.emailAddress || activeUser?.email || "customer@shaswatecom.com";
+      const resolvedPhone = addressData.phone || clerkUser?.primaryPhoneNumber?.phoneNumber || "+91 99999 99999";
+
+      const orderPayload: Partial<Order> = {
+        userId: resolvedUserId,
+        customerName: addressData.fullName || clerkUser?.fullName || "Customer",
+        customerEmail: resolvedEmail,
+        customerPhone: resolvedPhone,
         items: cart.map((item) => ({
           productId: item.product.id,
           name: item.product.name,
-          image: item.product.images[0],
+          image: item.product.images[0] || "",
           price: item.selectedVariant?.price || item.product.price,
           quantity: item.quantity,
           variantName: item.selectedVariant?.name,
@@ -159,9 +164,19 @@ export default function CheckoutPage() {
         discount: discountAmount,
         total: finalTotal,
         paymentMethod,
-        paymentStatus: paymentMethod === "UPI" ? "Pending Verification" : paymentMethod === "COD" ? "Pending" : "Paid",
+        paymentStatus: (paymentMethod === "UPI" ? "Pending Verification" : paymentMethod === "COD" ? "Pending" : "Paid") as Order["paymentStatus"],
         upiUtr: paymentMethod === "UPI" ? upiUtr.trim() : undefined,
-      });
+      };
+
+      // Save order to Firestore & store
+      const order = await createOrderInStore(orderPayload);
+
+      // Also trigger API route to ensure server state consistency
+      fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(order),
+      }).catch(() => {});
 
       clearCart();
       toast.success(
