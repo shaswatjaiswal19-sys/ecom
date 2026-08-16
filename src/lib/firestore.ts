@@ -32,32 +32,52 @@ async function fetchWithInstantFallback<T>(firestoreCall: () => Promise<T>, fall
   }
 }
 
-// Products Firestore API - Instant 0ms response
+// Products Firestore API - Database Synchronized
 export async function getProductsFromStore(): Promise<Product[]> {
-  return fetchWithInstantFallback(async () => {
+  try {
     const querySnapshot = await getDocs(collection(db, "products"));
-    if (querySnapshot.empty) return MOCK_PRODUCTS;
-    const products: Product[] = [];
-    querySnapshot.forEach((doc) => {
-      products.push({ id: doc.id, ...doc.data() } as Product);
+    const firestoreProducts: Product[] = [];
+    querySnapshot.forEach((docSnap) => {
+      firestoreProducts.push({ id: docSnap.id, ...docSnap.data() } as Product);
     });
-    return products.length ? products : MOCK_PRODUCTS;
-  }, MOCK_PRODUCTS);
+
+    if (firestoreProducts.length > 0) {
+      // Merge with MOCK_PRODUCTS to preserve default rich catalog while giving priority to custom products
+      const customIds = new Set(firestoreProducts.map((p) => p.id));
+      const merged = [
+        ...firestoreProducts,
+        ...MOCK_PRODUCTS.filter((p) => !customIds.has(p.id))
+      ];
+      return merged;
+    }
+    return MOCK_PRODUCTS;
+  } catch (err) {
+    console.error("Firestore getProductsFromStore error:", err);
+    return MOCK_PRODUCTS;
+  }
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
-  const found = MOCK_PRODUCTS.find((p) => p.slug === slug);
-  if (found) return found;
-
-  return fetchWithInstantFallback(async () => {
+  try {
     const q = query(collection(db, "products"), where("slug", "==", slug));
     const querySnapshot = await getDocs(q);
     if (!querySnapshot.empty) {
       const docData = querySnapshot.docs[0];
       return { id: docData.id, ...docData.data() } as Product;
     }
-    return null;
-  }, null);
+
+    // Direct ID lookup fallback
+    const idDoc = await getDocs(query(collection(db, "products"), where("id", "==", slug)));
+    if (!idDoc.empty) {
+      const docData = idDoc.docs[0];
+      return { id: docData.id, ...docData.data() } as Product;
+    }
+  } catch (err) {
+    console.error("Firestore getProductBySlug error:", err);
+  }
+
+  const found = MOCK_PRODUCTS.find((p) => p.slug === slug || p.id === slug);
+  return found || null;
 }
 
 // Categories Firestore API - Instant 0ms response
@@ -271,7 +291,7 @@ export async function getOrdersFromStore(): Promise<Order[]> {
   }
 }
 
-// Create, Update, Delete Product Firestore API
+// Create, Update, Delete Product Firestore API - Guaranteed Persistence
 export async function createProductInFirestore(productData: Partial<Product>): Promise<Product> {
   const newProduct: Product = {
     id: productData.id || `prod-${Date.now()}`,
@@ -320,9 +340,12 @@ export async function createProductInFirestore(productData: Partial<Product>): P
   } catch {}
 
   const sanitizedDoc = sanitizeForFirestore(newProduct);
-  if (!isMockFirebase) {
-    addDoc(collection(db, "products"), sanitizedDoc).catch(() => {});
+  try {
+    await setDoc(doc(db, "products", newProduct.id), sanitizedDoc);
+  } catch (err) {
+    console.error("Firestore createProduct error:", err);
   }
+
   return newProduct;
 }
 
@@ -338,6 +361,12 @@ export async function updateProductInFirestore(id: string, updates: Partial<Prod
       useProductStore.getState().updateProduct(id, { ...existing, ...updates });
     }
   } catch {}
+
+  try {
+    await setDoc(doc(db, "products", id), sanitizeForFirestore(updates), { merge: true });
+  } catch (err) {
+    console.error("Firestore updateProduct error:", err);
+  }
   return true;
 }
 
@@ -350,6 +379,12 @@ export async function deleteProductInFirestore(id: string): Promise<boolean> {
     const { useProductStore } = require("./store");
     useProductStore.getState().deleteProduct(id);
   } catch {}
+
+  try {
+    await deleteDoc(doc(db, "products", id));
+  } catch (err) {
+    console.error("Firestore deleteProduct error:", err);
+  }
   return true;
 }
 

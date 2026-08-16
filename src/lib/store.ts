@@ -213,6 +213,7 @@ export const useCompareStore = create<CompareState>((set) => ({
 // Persistent Products Store
 interface ProductState {
   products: Product[];
+  setProducts: (products: Product[]) => void;
   addProduct: (product: Product) => void;
   updateProduct: (id: string, updatedProduct: Product) => void;
   deleteProduct: (id: string) => void;
@@ -223,6 +224,7 @@ export const useProductStore = create<ProductState>()(
   persist(
     (set) => ({
       products: MOCK_PRODUCTS,
+      setProducts: (products) => set({ products }),
       addProduct: (newProduct) => {
         // Also keep memory array updated
         const existingIdx = MOCK_PRODUCTS.findIndex((p) => p.id === newProduct.id);

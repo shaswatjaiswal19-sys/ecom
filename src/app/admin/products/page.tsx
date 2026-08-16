@@ -1,9 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { useProductStore } from "@/lib/store";
+import { useState, useEffect, useCallback } from "react";
+import { useProductStore, useCategoryStore, useBrandStore } from "@/lib/store";
 import { formatCurrency } from "@/lib/utils";
 import { Product } from "@/types";
+import { db } from "@/lib/firebase";
+import { collection, onSnapshot } from "firebase/firestore";
+import {
+  getProductsFromStore,
+  createProductInFirestore,
+  updateProductInFirestore,
+  deleteProductInFirestore,
+} from "@/lib/firestore";
 import {
   Plus,
   Search,
@@ -27,14 +35,70 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import toast from "react-hot-toast";
-import { useCategoryStore, useBrandStore } from "@/lib/store";
 
 import { GROCERY_CATEGORIES, GROCERY_BRANDS, GROCERY_UNITS } from '@/lib/constants/grocery';
 
 export default function AdminProductsPage() {
-  const { products, addProduct, updateProduct, deleteProduct, resetProducts } = useProductStore();
+  const { products, setProducts, addProduct, updateProduct, deleteProduct, resetProducts } = useProductStore();
   const { categories: customCategories } = useCategoryStore();
   const { brands: customBrands } = useBrandStore();
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchProducts = useCallback(async (showToast = false) => {
+    setIsRefreshing(true);
+    try {
+      // 1. Fetch from server API endpoint
+      const res = await fetch("/api/products", { cache: "no-store" });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.products) && data.products.length > 0) {
+        setProducts(data.products);
+        if (showToast) toast.success(`Synced ${data.products.length} products from database!`);
+        return;
+      }
+
+      // 2. Direct Firestore fallback
+      const liveProducts = await getProductsFromStore();
+      if (liveProducts && liveProducts.length > 0) {
+        setProducts(liveProducts);
+        if (showToast) toast.success(`Synced ${liveProducts.length} products from database!`);
+      }
+    } catch (err) {
+      console.error("Failed to fetch products:", err);
+      try {
+        const liveProducts = await getProductsFromStore();
+        if (liveProducts && liveProducts.length > 0) {
+          setProducts(liveProducts);
+        }
+      } catch {}
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [setProducts]);
+
+  useEffect(() => {
+    fetchProducts();
+
+    // Set up real-time listener for Firestore products
+    let unsubscribe: () => void = () => {};
+    try {
+      unsubscribe = onSnapshot(collection(db, "products"), (snapshot) => {
+        const liveProducts: Product[] = [];
+        snapshot.forEach((docSnap) => {
+          liveProducts.push({ id: docSnap.id, ...docSnap.data() } as Product);
+        });
+        if (liveProducts.length > 0) {
+          getProductsFromStore().then((merged) => {
+            if (merged && merged.length > 0) setProducts(merged);
+          }).catch(() => {});
+        }
+      });
+    } catch (err) {
+      console.error("Firestore onSnapshot products error:", err);
+    }
+
+    return () => unsubscribe();
+  }, [fetchProducts, setProducts]);
 
   const allCategories = Array.from(
     new Set([...customCategories.map((c) => c.name), ...GROCERY_CATEGORIES])
@@ -154,8 +218,9 @@ export default function AdminProductsPage() {
     setIsModalOpen(true);
   };
 
-  const handleDeleteProduct = (id: string) => {
+  const handleDeleteProduct = async (id: string) => {
     deleteProduct(id);
+    await deleteProductInFirestore(id);
     fetch(`/api/products?id=${id}`, { method: "DELETE" }).catch(() => {});
     toast.success("Product removed from catalog");
   };
@@ -188,7 +253,7 @@ export default function AdminProductsPage() {
   };
 
   // Save product (Add or Edit)
-  const handleSaveProduct = (e: React.FormEvent) => {
+  const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.price) {
       toast.error("Please fill in Product Name and Price");
@@ -224,6 +289,7 @@ export default function AdminProductsPage() {
           updatedAt: new Date().toISOString(),
         };
         updateProduct(editingProductId, updatedProduct);
+        await updateProductInFirestore(editingProductId, updatedProduct);
         fetch("/api/products", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -267,6 +333,7 @@ export default function AdminProductsPage() {
       };
 
       addProduct(newCreatedProduct);
+      await createProductInFirestore(newCreatedProduct);
       fetch("/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

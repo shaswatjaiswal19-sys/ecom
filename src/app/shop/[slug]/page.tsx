@@ -7,11 +7,13 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useProductStore } from "@/lib/store";
 import { useCartStore, useWishlistStore } from "@/lib/store";
+import { getProductBySlug, getProductsFromStore } from "@/lib/firestore";
 import { formatCurrency } from "@/lib/utils";
 import { MOCK_PRODUCTS } from "@/lib/mockData";
+import { Product } from "@/types";
 import {
   Star, ShoppingBag, Heart, Share2, Shield, Truck, RefreshCw,
-  ChevronRight, Package, Zap, BarChart3, Info, CheckCircle2, ZoomIn
+  ChevronRight, Package, Zap, BarChart3, Info, CheckCircle2, ZoomIn, Loader2
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -25,10 +27,32 @@ function ProductDetailContent({ slug }: { slug: string }) {
   const searchParams = useSearchParams();
   const initialViewMode = searchParams.get("view") === "360" ? "360" : "overview";
 
-  const { products } = useProductStore();
+  const { products, setProducts } = useProductStore();
+  const [liveProduct, setLiveProduct] = useState<Product | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
   const product =
-    products.find((p) => p.slug === slug) ||
-    MOCK_PRODUCTS.find((p) => p.slug === slug);
+    liveProduct ||
+    products.find((p) => p.slug === slug || p.id === slug) ||
+    MOCK_PRODUCTS.find((p) => p.slug === slug || p.id === slug);
+
+  useEffect(() => {
+    let isMounted = true;
+    getProductBySlug(slug)
+      .then((p) => {
+        if (isMounted) {
+          if (p) setLiveProduct(p);
+          setIsLoading(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [slug]);
 
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState(product?.variants?.[0]);
@@ -37,6 +61,15 @@ function ProductDetailContent({ slug }: { slug: string }) {
 
   const { addToCart } = useCartStore();
   const { toggleWishlist, isInWishlist } = useWishlistStore();
+
+  if (!product && isLoading) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8 space-y-4">
+        <Loader2 className="w-10 h-10 text-amber-500 animate-spin" />
+        <p className="text-zinc-500 text-sm font-semibold">Loading fresh farm product details...</p>
+      </div>
+    );
+  }
 
   if (!product) {
     return (

@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import {
   ArrowRight,
@@ -32,6 +32,7 @@ import QuickViewModal from "@/components/shop/QuickViewModal";
 import CountdownTimer from "@/components/shop/CountdownTimer";
 import { MOCK_CATEGORIES, MOCK_BRANDS } from "@/lib/mockData";
 import { useProductStore, useCategoryStore } from "@/lib/store";
+import { getProductsFromStore } from "@/lib/firestore";
 import { formatCurrency } from "@/lib/utils";
 import { Product } from "@/types";
 
@@ -111,10 +112,30 @@ const FAQS = [
 ];
 
 export default function HomePage() {
-  const { products: storeProducts } = useProductStore();
+  const { products: storeProducts, setProducts } = useProductStore();
   const { categories: storeCategories } = useCategoryStore();
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Fetch live products from backend database
+    fetch("/api/products", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.products) && data.products.length > 0) {
+          setProducts(data.products);
+        } else {
+          getProductsFromStore().then((live) => {
+            if (live && live.length > 0) setProducts(live);
+          });
+        }
+      })
+      .catch(() => {
+        getProductsFromStore().then((live) => {
+          if (live && live.length > 0) setProducts(live);
+        });
+      });
+  }, [setProducts]);
 
   // Global Page Scroll Animation Hooks (SSR-Safe)
   const { scrollYProgress } = useScroll();
