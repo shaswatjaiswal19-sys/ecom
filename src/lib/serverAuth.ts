@@ -41,10 +41,7 @@ export async function requireServerAdmin(): Promise<{
       user = authSession.sessionClaims;
     }
 
-    const isAdmin = isUserAdmin(user) || 
-      (authSession.sessionClaims?.metadata as any)?.role === "admin" ||
-      (authSession.sessionClaims?.publicMetadata as any)?.role === "admin" ||
-      (authSession.sessionClaims?.publicMetadata as any)?.isAdmin === true;
+    const isAdmin = isUserAdmin(user);
 
     if (!isAdmin) {
       return {
@@ -53,7 +50,7 @@ export async function requireServerAdmin(): Promise<{
           {
             success: false,
             code: "FORBIDDEN",
-            error: "Access Denied: You do not have administrator permissions in Clerk.",
+            error: "Access Denied: Only the designated Administrator email is authorized.",
           },
           { status: 403 }
         ),
