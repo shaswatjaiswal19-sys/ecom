@@ -26,7 +26,6 @@ import {
   LogOut,
 } from "lucide-react";
 import { SignedIn, SignedOut, UserButton, useUser } from "@clerk/nextjs";
-import { useAuthStore } from "@/lib/authStore";
 import { isUserAdmin } from "@/lib/adminAuth";
 import toast from "react-hot-toast";
 
@@ -41,16 +40,12 @@ export default function Navbar() {
   const { cart, toggleCartDrawer, getCartTotal } = useCartStore();
   const { wishlist, toggleWishlistDrawer } = useWishlistStore();
   const { theme, setTheme } = useTheme();
-  const { user: authUser, isAuthenticated, logout, syncWithClerk } = useAuthStore();
 
   const { user: clerkUser } = useUser();
 
   useEffect(() => {
     setMounted(true);
-    if (clerkUser && (!isAuthenticated || authUser?.id !== clerkUser.id)) {
-      syncWithClerk(clerkUser);
-    }
-  }, [clerkUser, isAuthenticated, authUser?.id, syncWithClerk]);
+  }, []);
 
   const { itemCount: rawItemCount } = getCartTotal();
   const itemCount = mounted ? rawItemCount : 0;
@@ -264,30 +259,6 @@ export default function Navbar() {
                       },
                     }}
                   />
-                </div>
-              ) : isAuthenticated && authUser ? (
-                <div className="flex items-center gap-2">
-                  <Link
-                    href="/account"
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 hover:bg-amber-500/10 transition-colors border border-amber-500/20 text-xs font-bold text-zinc-900 dark:text-white"
-                  >
-                    {authUser.avatar ? (
-                      <img src={authUser.avatar} alt={authUser.fullName} className="w-5 h-5 rounded-full object-cover" />
-                    ) : (
-                      <User className="w-3.5 h-3.5 text-amber-500" />
-                    )}
-                    <span className="hidden md:inline-block max-w-[90px] truncate">{authUser.fullName}</span>
-                  </Link>
-                  <button
-                    onClick={() => {
-                      logout();
-                      toast.success("Signed out successfully");
-                    }}
-                    title="Sign Out"
-                    className="p-1.5 rounded-xl text-zinc-400 hover:text-rose-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                  >
-                    <LogOut className="w-4 h-4" />
-                  </button>
                 </div>
               ) : (
                 <Link

@@ -15,8 +15,6 @@ import { CheckCircle2, MapPin, CreditCard, ShieldCheck, Truck, ArrowRight, Chevr
 import Image from "next/image";
 import toast from "react-hot-toast";
 
-import { useAuthStore } from "@/lib/authStore";
-
 const addressSchema = z.object({
   fullName: z.string().min(2, "Full name required"),
   phone: z.string().min(10, "Valid phone required"),
@@ -43,24 +41,9 @@ const AUTH_STEPS = ["Shipping Address", "Payment", "Review Order"];
 
 export default function CheckoutPage() {
   const { user: clerkUser } = useUser();
-  const { user: authUser, isAuthenticated, login, syncWithClerk } = useAuthStore();
   const router = useRouter();
 
-  // Sync Clerk user with local store whenever Clerk is logged in
-  useEffect(() => {
-    if (clerkUser) {
-      syncWithClerk(clerkUser);
-    }
-  }, [clerkUser, syncWithClerk]);
-
-  const activeUser = clerkUser ? {
-    id: clerkUser.id,
-    fullName: clerkUser.fullName || [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") || "Customer",
-    email: clerkUser.primaryEmailAddress?.emailAddress || "customer@manojtraders.com",
-    phone: clerkUser.primaryPhoneNumber?.phoneNumber || "",
-  } : authUser;
-
-  const isUserLoggedIn = Boolean(clerkUser || isAuthenticated || activeUser);
+  const isUserLoggedIn = Boolean(clerkUser);
 
   // If user is already logged in, start directly at Shipping Address (step 1).
   const [step, setStep] = useState(isUserLoggedIn ? 1 : 0);
@@ -77,8 +60,6 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("UPI");
   const [upiUtr, setUpiUtr] = useState("");
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-  const [quickLoginPhone, setQuickLoginPhone] = useState("");
-  const [quickLoginName, setQuickLoginName] = useState("");
 
   const { cart, clearCart, getCartTotal, couponCode, discountAmount } = useCartStore();
   const { shippingFee: configuredShippingFee, freeShippingThreshold } = useShippingStore();
@@ -89,8 +70,8 @@ export default function CheckoutPage() {
   const form = useForm<AddressForm>({
     resolver: zodResolver(addressSchema),
     defaultValues: {
-      fullName: activeUser?.fullName || "",
-      phone: activeUser?.phone || "",
+      fullName: clerkUser?.fullName || "",
+      phone: clerkUser?.primaryPhoneNumber?.phoneNumber || "",
       streetAddress: "",
       city: "",
       state: "",
@@ -101,32 +82,15 @@ export default function CheckoutPage() {
 
   // Keep form values populated if user logs in or hydrates
   useEffect(() => {
-    if (activeUser?.fullName && !form.getValues("fullName")) {
-      form.setValue("fullName", activeUser.fullName);
+    const name = clerkUser?.fullName;
+    const phone = clerkUser?.primaryPhoneNumber?.phoneNumber;
+    if (name && !form.getValues("fullName")) {
+      form.setValue("fullName", name);
     }
-    if (activeUser?.phone && !form.getValues("phone")) {
-      form.setValue("phone", activeUser.phone);
+    if (phone && !form.getValues("phone")) {
+      form.setValue("phone", phone);
     }
-  }, [activeUser, form]);
-
-  const handleQuickCheckoutLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!quickLoginPhone.trim()) {
-      toast.error("Please enter your mobile phone number or email");
-      return;
-    }
-    const isEmail = quickLoginPhone.includes("@");
-    const name = quickLoginName.trim() || (isEmail ? quickLoginPhone.split("@")[0] : "Customer");
-    login({
-      fullName: name,
-      email: isEmail ? quickLoginPhone.trim() : `${quickLoginPhone.replace(/\D/g, "")}@customer.manojtraders.com`,
-      phone: !isEmail ? quickLoginPhone.trim() : "+91 98765 43210",
-    });
-    form.setValue("fullName", name);
-    if (!isEmail) form.setValue("phone", quickLoginPhone.trim());
-    toast.success("Signed in & session saved! You can now complete your order.");
-    setStep(1);
-  };
+  }, [clerkUser, form]);
 
   const handlePlaceOrder = async () => {
     if (paymentMethod === "UPI" && !upiUtr.trim()) {
@@ -139,8 +103,8 @@ export default function CheckoutPage() {
       const addressData = form.getValues();
       const shippingAddress = { ...addressData, id: `addr-${Date.now()}`, type: "Home" as const };
 
-      const resolvedUserId = clerkUser?.id || activeUser?.id || "guest";
-      const resolvedEmail = clerkUser?.primaryEmailAddress?.emailAddress || activeUser?.email || "customer@shaswatecom.com";
+      const resolvedUserId = clerkUser?.id || "guest";
+      const resolvedEmail = clerkUser?.primaryEmailAddress?.emailAddress || "customer@shaswatecom.com";
       const resolvedPhone = addressData.phone || clerkUser?.primaryPhoneNumber?.phoneNumber || "+91 99999 99999";
 
       const orderPayload: Partial<Order> = {
@@ -248,81 +212,38 @@ export default function CheckoutPage() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
 
-            {/* STEP 0: Mandatory Authentication Gate */}
+            {/* STEP 0: Authentication Gate */}
             {step === 0 && !isUserLoggedIn && (
-              <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-amber-500/30 dark:border-amber-500/20 shadow-xl space-y-6">
+              <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-amber-500/30 dark:border-amber-500/20 shadow-xl space-y-6 text-center">
+                <div className="w-14 h-14 rounded-3xl bg-amber-500/10 border border-amber-500/20 mx-auto flex items-center justify-center text-amber-500">
+                  <ShieldCheck className="w-7 h-7" />
+                </div>
                 <div className="space-y-2">
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs font-bold uppercase tracking-wider">
-                    <ShieldCheck className="w-3.5 h-3.5" /> Step 1 of 4: Account Required
+                    <ShieldCheck className="w-3.5 h-3.5" /> Authentication
                   </div>
                   <h2 className="text-2xl font-black text-zinc-900 dark:text-white">
-                    Sign In to Complete Your Order
+                    Sign In with Clerk to Complete Order
                   </h2>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                    To guarantee doorstep delivery, real-time GPS tracking, and digital tax invoices, please sign in or register before checkout. Your session will be saved permanently.
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400 max-w-md mx-auto">
+                    Please sign in to your Clerk account (Google, Email, or Phone) for doorstep delivery tracking and digital tax invoices.
                   </p>
                 </div>
 
-                {/* Clerk Modal / Portal Sign In */}
-                <Link
-                  href="/sign-in?redirect_url=/checkout"
-                  className="w-full py-3.5 px-4 rounded-2xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 font-bold text-sm hover:bg-amber-500 hover:text-black transition-all flex items-center justify-center gap-3 border border-zinc-200 dark:border-zinc-700 shadow-sm"
-                >
-                  <ShieldCheck className="w-5 h-5 text-amber-500" />
-                  <span>Sign In with Clerk Account (Google / Email / Phone)</span>
-                </Link>
-
-                <div className="relative flex py-1 items-center">
-                  <div className="flex-grow border-t border-zinc-200 dark:border-zinc-800"></div>
-                  <span className="flex-shrink mx-4 text-xs text-zinc-400 font-semibold uppercase">Or Instant Quick Checkout</span>
-                  <div className="flex-grow border-t border-zinc-200 dark:border-zinc-800"></div>
-                </div>
-
-                {/* Instant Quick Login Form */}
-                <form onSubmit={handleQuickCheckoutLogin} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5 uppercase tracking-wider">
-                      Your Full Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Shaswat Jaiswal"
-                      value={quickLoginName}
-                      onChange={(e) => setQuickLoginName(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-sm outline-none focus:border-amber-500 transition-colors text-zinc-900 dark:text-white"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5 uppercase tracking-wider">
-                      Mobile Number or Email <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. +91 98765 43210 or user@example.com"
-                      value={quickLoginPhone}
-                      onChange={(e) => setQuickLoginPhone(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-sm outline-none focus:border-amber-500 transition-colors text-zinc-900 dark:text-white font-medium"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-black text-sm transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2"
-                  >
-                    <span>Sign In & Continue to Address</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </form>
-
-                <div className="pt-2 text-center">
+                <div className="max-w-sm mx-auto space-y-3 pt-2">
                   <Link
-                    href="/sign-in?redirect=/checkout"
-                    className="text-xs font-semibold text-zinc-500 hover:text-amber-500 transition-colors"
+                    href="/sign-in?redirect_url=/checkout"
+                    className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 cursor-pointer"
                   >
-                    Prefer to use full Clerk Sign In portal? Click here →
+                    <span>Sign In with Clerk</span>
+                    <ArrowRight className="w-4 h-4" />
                   </Link>
+                  <button
+                    onClick={() => setStep(1)}
+                    className="w-full py-2.5 px-4 text-xs font-semibold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
+                  >
+                    Or Continue as Guest →
+                  </button>
                 </div>
               </div>
             )}
@@ -334,9 +255,9 @@ export default function CheckoutPage() {
                   <h2 className="text-lg font-black text-zinc-900 dark:text-white flex items-center gap-2">
                     <MapPin className="w-5 h-5 text-amber-500" /> Shipping Address
                   </h2>
-                  {activeUser && (
+                  {clerkUser && (
                     <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full">
-                      ✓ Logged in as {activeUser.fullName}
+                      ✓ Signed in as {clerkUser.fullName || clerkUser.firstName || "Customer"}
                     </span>
                   )}
                 </div>

@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
-import { useAuthStore } from "@/lib/authStore";
 import { Package, MapPin, Heart, Wallet, RotateCcw, ArrowRight, TrendingUp, Star } from "lucide-react";
 import { MOCK_ORDERS } from "@/lib/mockData";
 import { formatCurrency } from "@/lib/utils";
@@ -23,8 +22,7 @@ const QUICK_LINKS = [
 
 export default function AccountDashboardPage() {
   const { user } = useUser();
-  const { user: authUser } = useAuthStore();
-  const displayName = authUser?.fullName || user?.firstName || "Valued Member";
+  const displayName = user?.fullName || user?.firstName || "Valued Member";
   const recentOrder = MOCK_ORDERS[0];
 
   return (

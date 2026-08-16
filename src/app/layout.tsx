@@ -10,7 +10,7 @@ import CartDrawer from "@/components/layout/CartDrawer";
 import WishlistDrawer from "@/components/layout/WishlistDrawer";
 import MobileNav from "@/components/layout/MobileNav";
 import PWAInstallPrompt from "@/components/layout/PWAInstallPrompt";
-import WelcomeLoginModal from "@/components/layout/WelcomeLoginModal";
+import SingleSessionGuard from "@/components/auth/SingleSessionGuard";
 import { Toaster } from "react-hot-toast";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -58,7 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <WishlistDrawer />
               <MobileNav />
               <PWAInstallPrompt />
-              <WelcomeLoginModal />
+              <SingleSessionGuard />
               <Toaster
                 position="bottom-right"
                 toastOptions={{

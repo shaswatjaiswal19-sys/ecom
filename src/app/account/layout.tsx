@@ -20,7 +20,27 @@ const ACCOUNT_NAV = [
 
 export default function AccountLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { user } = useUser();
+  const { isLoaded, isSignedIn, user } = useUser();
+
+  if (isLoaded && !isSignedIn) {
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center space-y-4">
+        <div className="w-16 h-16 rounded-3xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
+          <User className="w-8 h-8" />
+        </div>
+        <h2 className="text-2xl font-black text-zinc-900 dark:text-white">Account Access Required</h2>
+        <p className="text-sm text-zinc-500 max-w-md">
+          Please sign in to view your orders, addresses, and membership privileges.
+        </p>
+        <Link
+          href="/sign-in"
+          className="px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-sm shadow-md transition-all cursor-pointer"
+        >
+          Sign In to Your Account
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 py-12">

@@ -16,14 +16,14 @@ export default function SignUpPage() {
         href="/"
         className="absolute top-6 left-6 flex items-center gap-2 text-xs font-semibold text-zinc-400 hover:text-white transition-colors bg-zinc-900/80 px-4 py-2 rounded-full border border-zinc-800 backdrop-blur-md"
       >
-        <ArrowLeft className="w-3.5 h-3.5" /> Back to Manoj Traders
+        <ArrowLeft className="w-3.5 h-3.5" /> Back to SHASWAT ECOM
       </Link>
 
       <div className="w-full max-w-md space-y-6 text-center z-10">
         {/* Brand Header */}
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold">
-            <Sparkles className="w-3.5 h-3.5" /> Join Manoj Traders Privileges
+            <Sparkles className="w-3.5 h-3.5" /> Join SHASWAT ECOM Privileges
           </div>
           <h1 className="text-3xl font-black tracking-tight text-white">Create Account</h1>
           <p className="text-zinc-400 text-sm">Unlock ₹500 welcome bonus points & express checkout</p>

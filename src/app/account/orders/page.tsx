@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useOrderStore, useCartStore } from "@/lib/store";
-import { useAuthStore } from "@/lib/authStore";
 import { useUser } from "@clerk/nextjs";
 import { getOrdersFromStore } from "@/lib/firestore";
 import { formatCurrency } from "@/lib/utils";
@@ -53,7 +52,6 @@ const REASON_OPTIONS = [
 
 export default function OrdersPage() {
   const { user: clerkUser } = useUser();
-  const { user: localUser } = useAuthStore();
   const { orders: rawStoreOrders, setOrders, requestCancellation } = useOrderStore();
   const { addToCart } = useCartStore();
   const [searchQuery, setSearchQuery] = useState("");
@@ -85,8 +83,8 @@ export default function OrdersPage() {
 
   const filters = ["All", "On the Way", "Delivered", "Cancelled"];
 
-  const userEmail = clerkUser?.primaryEmailAddress?.emailAddress?.toLowerCase() || localUser?.email?.toLowerCase();
-  const userId = clerkUser?.id || localUser?.id;
+  const userEmail = clerkUser?.primaryEmailAddress?.emailAddress?.toLowerCase();
+  const userId = clerkUser?.id;
 
   // Filter orders by status pill & search query
   const filteredOrders = storeOrders.filter((o) => {
