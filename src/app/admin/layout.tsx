@@ -40,7 +40,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="w-12 h-12 rounded-2xl bg-amber-500 flex items-center justify-center text-zinc-950 font-black text-xl shadow-lg">
           S
         </div>
-        <div className="text-xs text-zinc-400 font-mono">Verifying Admin Credentials...</div>
+        <div className="text-xs text-zinc-400 font-mono">Verifying Admin Authorization...</div>
       </div>
     );
   }
