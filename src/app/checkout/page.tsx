@@ -168,15 +168,23 @@ export default function CheckoutPage() {
         upiUtr: paymentMethod === "UPI" ? upiUtr.trim() : undefined,
       };
 
-      // Save order to Firestore & store
-      const order = await createOrderInStore(orderPayload);
-
-      // Also trigger API route to ensure server state consistency
-      fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(order),
-      }).catch(() => {});
+      // 1. Create order on backend API & Firestore
+      let order: Order;
+      try {
+        const res = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(orderPayload),
+        });
+        const data = await res.json();
+        if (data.success && data.order) {
+          order = data.order;
+        } else {
+          order = await createOrderInStore(orderPayload);
+        }
+      } catch {
+        order = await createOrderInStore(orderPayload);
+      }
 
       clearCart();
       toast.success(

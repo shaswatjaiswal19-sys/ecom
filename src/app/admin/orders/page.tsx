@@ -70,6 +70,16 @@ export default function AdminOrdersPage() {
   const fetchLatestOrders = useCallback(async (showToast = false) => {
     setIsRefreshing(true);
     try {
+      // 1. Fetch from server API endpoint
+      const res = await fetch("/api/orders", { cache: "no-store" });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.orders) && data.orders.length > 0) {
+        setOrders(data.orders);
+        if (showToast) toast.success(`Synced ${data.orders.length} orders from database!`);
+        return;
+      }
+
+      // 2. Direct Firestore fallback
       const liveOrders = await getOrdersFromStore();
       if (liveOrders && liveOrders.length > 0) {
         setOrders(liveOrders);
@@ -77,6 +87,12 @@ export default function AdminOrdersPage() {
       }
     } catch (err) {
       console.error("Failed to fetch latest orders:", err);
+      try {
+        const liveOrders = await getOrdersFromStore();
+        if (liveOrders && liveOrders.length > 0) {
+          setOrders(liveOrders);
+        }
+      } catch {}
     } finally {
       setIsRefreshing(false);
     }
@@ -85,9 +101,15 @@ export default function AdminOrdersPage() {
   useEffect(() => {
     fetchLatestOrders();
 
+    // Periodic sync every 6 seconds
+    const interval = setInterval(() => {
+      fetchLatestOrders();
+    }, 6000);
+
     // Set up real-time listener for Firestore orders
+    let unsubscribe: () => void = () => {};
     try {
-      const unsubscribe = onSnapshot(collection(db, "orders"), (snapshot) => {
+      unsubscribe = onSnapshot(collection(db, "orders"), (snapshot) => {
         const liveOrders: Order[] = [];
         snapshot.forEach((docSnap) => {
           liveOrders.push({ id: docSnap.id, ...docSnap.data() } as Order);
@@ -97,10 +119,14 @@ export default function AdminOrdersPage() {
           setOrders(liveOrders);
         }
       });
-      return () => unsubscribe();
     } catch (err) {
       console.error("Firestore onSnapshot listener error:", err);
     }
+
+    return () => {
+      clearInterval(interval);
+      unsubscribe();
+    };
   }, [fetchLatestOrders, setOrders]);
 
   // Deduplicate orders by unique ID and order number
