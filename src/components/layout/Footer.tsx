@@ -143,11 +143,11 @@ export default function Footer() {
 
       {/* Bottom Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 border-t border-zinc-800 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
-        <div className="flex flex-col sm:flex-row items-center gap-2 text-center sm:text-left">
+        <div className="flex flex-col lg:flex-row items-center gap-2 text-center lg:text-left flex-wrap">
           <span>© 2026 Shaswat Ecom. All rights reserved.</span>
-          <span className="hidden sm:inline">•</span>
+          <span className="hidden lg:inline">•</span>
           <span className="font-semibold text-zinc-300 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
-            Made by <strong className="text-amber-400 font-extrabold">Satyesh Kumar</strong> (Contact: <a href="tel:7307440594" className="text-amber-400 font-mono font-bold hover:underline">7307440594</a>)
+            Made by <strong className="text-amber-400 font-extrabold">Satyesh Kumar</strong> (Contact: <a href="tel:7307440594" className="text-amber-400 font-mono font-bold hover:underline">7307440594</a>) &amp; <strong className="text-amber-400 font-extrabold">Shaswat Jaiswal</strong> (Contact: <a href="tel:9170215145" className="text-amber-400 font-mono font-bold hover:underline">9170215145</a>)
           </span>
         </div>
         <div className="flex items-center gap-4 font-mono text-[11px]">
