@@ -60,36 +60,6 @@ const MARQUEE_ITEMS = [
   "🛡️ Zero Pesticides & Direct Farm-Sourced",
 ];
 
-const KIRANA_PIPELINE = [
-  {
-    step: "01",
-    title: "100% Organic Farm Harvest",
-    desc: "Sourced directly from certified heritage farms across India with zero chemical pesticides.",
-    icon: "🌱",
-    tag: "Soil Certified",
-  },
-  {
-    step: "02",
-    title: "Traditional Bilona & Wood-Pressed",
-    desc: "A2 ghee churned bi-directionally in clay pots; edible oils cold-extracted in wooden Kolhus.",
-    icon: "🏺",
-    tag: "Ancient Purity",
-  },
-  {
-    step: "03",
-    title: "Vacuum Sealed & Lab Tested",
-    desc: "Packed in nitrogen-flushed food grade glass jars and breathable jute burlap bags.",
-    icon: "🔬",
-    tag: "NABL Certified",
-  },
-  {
-    step: "04",
-    title: "24-Hr Cold Chain Express Delivery",
-    desc: "Dispatched in insulated protective packaging straight to your doorstep with live GPS tracking.",
-    icon: "🚚",
-    tag: "Express Dispatch",
-  },
-];
 
 
 const FAQS = [
@@ -324,47 +294,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ===== 4-STAGE KIRANA PURITY PIPELINE (Scroll Animated) ===== */}
-      <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-        <div className="text-center max-w-2xl mx-auto space-y-2">
-          <span className="text-xs font-black uppercase tracking-wider text-amber-500">The Manoj Traders Standard</span>
-          <h2 className="text-3xl sm:text-4xl font-black text-zinc-900 dark:text-white">
-            From Sacred Soil to Your Kitchen
-          </h2>
-          <p className="text-xs sm:text-sm text-zinc-500">
-            Every grain, oil drop, and ghee jar passes our rigorous 4-step organic validation pipeline.
-          </p>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {KIRANA_PIPELINE.map((p, idx) => (
-            <motion.div
-              key={p.step}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: idx * 0.12 }}
-              className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-black/5 dark:border-white/10 shadow-sm space-y-4 hover:border-amber-500/40 transition-all flex flex-col justify-between"
-            >
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-3xl">{p.icon}</span>
-                  <span className="text-xs font-mono font-black text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-full">
-                    {p.step}
-                  </span>
-                </div>
-                <h3 className="font-bold text-base text-zinc-900 dark:text-white">{p.title}</h3>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">{p.desc}</p>
-              </div>
-
-              <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>{p.tag}</span>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
 
       {/* ===== BEST SELLING PANTRY STAPLES ===== */}
       <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
