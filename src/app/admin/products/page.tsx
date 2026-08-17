@@ -51,7 +51,7 @@ export default function AdminProductsPage() {
       // 1. Fetch from server API endpoint
       const res = await fetch("/api/products", { cache: "no-store" });
       const data = await res.json();
-      if (data.success && Array.isArray(data.products) && data.products.length > 0) {
+      if (data.success && Array.isArray(data.products)) {
         setProducts(data.products);
         if (showToast) toast.success(`Synced ${data.products.length} products from database!`);
         return;
@@ -59,17 +59,13 @@ export default function AdminProductsPage() {
 
       // 2. Direct Firestore fallback
       const liveProducts = await getProductsFromStore();
-      if (liveProducts && liveProducts.length > 0) {
-        setProducts(liveProducts);
-        if (showToast) toast.success(`Synced ${liveProducts.length} products from database!`);
-      }
+      setProducts(liveProducts || []);
+      if (showToast) toast.success(`Synced ${liveProducts?.length || 0} products from database!`);
     } catch (err) {
       console.error("Failed to fetch products:", err);
       try {
         const liveProducts = await getProductsFromStore();
-        if (liveProducts && liveProducts.length > 0) {
-          setProducts(liveProducts);
-        }
+        setProducts(liveProducts || []);
       } catch {}
     } finally {
       setIsRefreshing(false);

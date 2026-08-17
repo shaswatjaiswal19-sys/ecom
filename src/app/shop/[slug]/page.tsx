@@ -9,7 +9,6 @@ import { useProductStore } from "@/lib/store";
 import { useCartStore, useWishlistStore } from "@/lib/store";
 import { getProductBySlug, getProductsFromStore } from "@/lib/firestore";
 import { formatCurrency } from "@/lib/utils";
-import { MOCK_PRODUCTS } from "@/lib/mockData";
 import { Product } from "@/types";
 import {
   Star, ShoppingBag, Heart, Share2, Shield, Truck, RefreshCw,
@@ -33,8 +32,7 @@ function ProductDetailContent({ slug }: { slug: string }) {
 
   const product =
     liveProduct ||
-    products.find((p) => p.slug === slug || p.id === slug) ||
-    MOCK_PRODUCTS.find((p) => p.slug === slug || p.id === slug);
+    products.find((p) => p.slug === slug || p.id === slug);
 
   useEffect(() => {
     let isMounted = true;

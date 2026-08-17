@@ -13,7 +13,7 @@ import {
 import ProductCard from "@/components/shop/ProductCard";
 import QuickViewModal from "@/components/shop/QuickViewModal";
 import CountdownTimer from "@/components/shop/CountdownTimer";
-import { MOCK_CATEGORIES, MOCK_BRANDS } from "@/lib/mockData";
+import { MOCK_BRANDS } from "@/lib/mockData";
 import { useProductStore, useCategoryStore } from "@/lib/store";
 import { getProductsFromStore } from "@/lib/firestore";
 import { formatCurrency } from "@/lib/utils";
@@ -51,7 +51,7 @@ const FAQS = [
 
 export default function HomePage() {
   const { products: storeProducts, setProducts } = useProductStore();
-  const { categories: storeCategories } = useCategoryStore();
+  const { categories: storeCategories, setCategories: storeSetCategories } = useCategoryStore();
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
 
@@ -60,20 +60,30 @@ export default function HomePage() {
     fetch("/api/products", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
-        if (data.success && Array.isArray(data.products) && data.products.length > 0) {
+        if (data.success && Array.isArray(data.products)) {
           setProducts(data.products);
         } else {
           getProductsFromStore().then((live) => {
-            if (live && live.length > 0) setProducts(live);
+            setProducts(live || []);
           });
         }
       })
       .catch(() => {
         getProductsFromStore().then((live) => {
-          if (live && live.length > 0) setProducts(live);
+          setProducts(live || []);
         });
       });
-  }, [setProducts]);
+
+    // Fetch live categories from backend database
+    fetch("/api/categories", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.categories)) {
+          storeSetCategories(data.categories);
+        }
+      })
+      .catch(() => {});
+  }, [setProducts, storeSetCategories]);
 
   // Global Page Scroll Animation Hooks (SSR-Safe)
   const { scrollYProgress } = useScroll();
@@ -83,9 +93,9 @@ export default function HomePage() {
   const heroOpacity = useTransform(scrollYProgress, [0, 0.25], [1, 0]);
   const heroY = useTransform(scrollYProgress, [0, 0.25], ["0%", "12%"]);
 
-  const displayCategories = storeCategories.length ? storeCategories : MOCK_CATEGORIES;
+  const displayCategories = storeCategories;
   const flashSaleProducts = storeProducts.filter((p) => p.isFlashSale);
-  const featuredProducts = storeProducts.filter((p) => p.isFeatured);
+  const featuredProducts = storeProducts.filter((p) => p.isFeatured || true);
   const flashSaleEnd = "2026-12-31T23:59:59Z";
 
   return (
@@ -192,70 +202,101 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ===== FEATURED KIRANA AISLES ===== */}
-      <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div className="space-y-1">
-            <span className="text-xs font-black uppercase tracking-wider text-amber-500">Farm Direct Supermarket</span>
-            <h2 className="text-3xl sm:text-4xl font-black text-zinc-900 dark:text-white">
-              Explore Kirana Aisles
-            </h2>
-          </div>
-          <Link href="/shop" className="text-xs font-bold text-amber-500 hover:underline flex items-center gap-1">
-            View All Categories ({displayCategories.length}) <ChevronRight className="w-4 h-4" />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {displayCategories.map((cat, idx) => (
-            <motion.div
-              key={cat.id}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: idx * 0.1 }}
-            >
-              <Link
-                href={`/shop?category=${encodeURIComponent(cat.name)}`}
-                className="group relative rounded-3xl overflow-hidden h-80 border border-black/5 dark:border-white/10 shadow-md flex flex-col justify-end p-6 bg-zinc-950 text-white block hover:shadow-xl transition-all"
-              >
-                <img
-                  src={cat.image}
-                  alt={cat.name}
-                  className="absolute inset-0 w-full h-full object-cover opacity-65 group-hover:scale-110 transition-transform duration-700 pointer-events-none"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent pointer-events-none" />
-
-                <div className="relative z-10 space-y-2">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 bg-black/60 px-3 py-1 rounded-full backdrop-blur-md inline-block border border-amber-500/30">
-                    {cat.itemCount || 10}+ Items in Stock
-                  </span>
-                  <h3 className="text-xl font-black group-hover:text-amber-400 transition-colors leading-tight">
-                    {cat.name}
-                  </h3>
-                  <p className="text-xs text-zinc-300 line-clamp-2 leading-relaxed">{cat.description}</p>
-                </div>
-              </Link>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* ===== FLASH SALE WITH COUNTDOWN TIMER ===== */}
-      <section className="py-20 bg-gradient-to-br from-amber-500/10 via-zinc-900 to-zinc-950 text-white border-y border-amber-500/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-zinc-800 pb-8">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500 text-black font-black text-xs uppercase tracking-wider">
-                <Flame className="w-4 h-4 fill-black" /> Supermarket Daily Flash Deal
-              </div>
-              <h2 className="text-3xl sm:text-4xl font-black">Limited-Time Organic Offers</h2>
+      {/* ===== FEATURED KIRANA AISLES (If Categories Exist) ===== */}
+      {displayCategories.length > 0 && (
+        <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div className="space-y-1">
+              <span className="text-xs font-black uppercase tracking-wider text-amber-500">Farm Direct Supermarket</span>
+              <h2 className="text-3xl sm:text-4xl font-black text-zinc-900 dark:text-white">
+                Explore Kirana Aisles
+              </h2>
             </div>
-            <CountdownTimer endsAt={flashSaleEnd} targetDate={flashSaleEnd} />
+            <Link href="/shop" className="text-xs font-bold text-amber-500 hover:underline flex items-center gap-1">
+              View All Categories ({displayCategories.length}) <ChevronRight className="w-4 h-4" />
+            </Link>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {flashSaleProducts.slice(0, 4).map((product) => (
+            {displayCategories.map((cat, idx) => (
+              <motion.div
+                key={cat.id}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: idx * 0.1 }}
+              >
+                <Link
+                  href={`/shop?category=${encodeURIComponent(cat.name)}`}
+                  className="group relative rounded-3xl overflow-hidden h-80 border border-black/5 dark:border-white/10 shadow-md flex flex-col justify-end p-6 bg-zinc-950 text-white block hover:shadow-xl transition-all"
+                >
+                  <img
+                    src={cat.image}
+                    alt={cat.name}
+                    className="absolute inset-0 w-full h-full object-cover opacity-65 group-hover:scale-110 transition-transform duration-700 pointer-events-none"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent pointer-events-none" />
+
+                  <div className="relative z-10 space-y-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 bg-black/60 px-3 py-1 rounded-full backdrop-blur-md inline-block border border-amber-500/30">
+                      {cat.itemCount || 0}+ Items in Stock
+                    </span>
+                    <h3 className="text-xl font-black group-hover:text-amber-400 transition-colors leading-tight">
+                      {cat.name}
+                    </h3>
+                    <p className="text-xs text-zinc-300 line-clamp-2 leading-relaxed">{cat.description}</p>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ===== FLASH SALE WITH COUNTDOWN TIMER (If Flash Deals Exist) ===== */}
+      {flashSaleProducts.length > 0 && (
+        <section className="py-20 bg-gradient-to-br from-amber-500/10 via-zinc-900 to-zinc-950 text-white border-y border-amber-500/20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-zinc-800 pb-8">
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500 text-black font-black text-xs uppercase tracking-wider">
+                  <Flame className="w-4 h-4 fill-black" /> Supermarket Daily Flash Deal
+                </div>
+                <h2 className="text-3xl sm:text-4xl font-black">Limited-Time Organic Offers</h2>
+              </div>
+              <CountdownTimer endsAt={flashSaleEnd} targetDate={flashSaleEnd} />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {flashSaleProducts.slice(0, 4).map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onQuickView={setQuickViewProduct}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ===== BEST SELLING PANTRY STAPLES (If Products Exist) ===== */}
+      {storeProducts.length > 0 && (
+        <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div className="space-y-1">
+              <span className="text-xs font-black uppercase tracking-wider text-amber-500">Customer Favorites</span>
+              <h2 className="text-3xl sm:text-4xl font-black text-zinc-900 dark:text-white">
+                Best Selling Kirana Staples
+              </h2>
+            </div>
+            <Link href="/shop" className="text-xs font-bold text-amber-500 hover:underline flex items-center gap-1">
+              View All Products ({storeProducts.length}) <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {featuredProducts.slice(0, 8).map((product) => (
               <ProductCard
                 key={product.id}
                 product={product}
@@ -263,35 +304,8 @@ export default function HomePage() {
               />
             ))}
           </div>
-        </div>
-      </section>
-
-
-
-      {/* ===== BEST SELLING PANTRY STAPLES ===== */}
-      <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div className="space-y-1">
-            <span className="text-xs font-black uppercase tracking-wider text-amber-500">Customer Favorites</span>
-            <h2 className="text-3xl sm:text-4xl font-black text-zinc-900 dark:text-white">
-              Best Selling Kirana Staples
-            </h2>
-          </div>
-          <Link href="/shop?filter=best-sellers" className="text-xs font-bold text-amber-500 hover:underline flex items-center gap-1">
-            View All Best Sellers <ChevronRight className="w-4 h-4" />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featuredProducts.slice(0, 8).map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onQuickView={setQuickViewProduct}
-            />
-          ))}
-        </div>
-      </section>
+        </section>
+      )}
 
 
       {/* ===== FAQ SECTION ===== */}

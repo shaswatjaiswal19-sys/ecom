@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCategoryStore, useBrandStore, useProductStore } from "@/lib/store";
 import { Category, Brand } from "@/types";
 import {
@@ -32,9 +32,20 @@ const ICON_OPTIONS = [
 ];
 
 export default function AdminCategoriesPage() {
-  const { categories, addCategory, deleteCategory } = useCategoryStore();
+  const { categories, setCategories, addCategory, deleteCategory } = useCategoryStore();
   const { brands, addBrand, deleteBrand } = useBrandStore();
   const { products } = useProductStore();
+
+  useEffect(() => {
+    fetch("/api/categories", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.categories)) {
+          setCategories(data.categories);
+        }
+      })
+      .catch(() => {});
+  }, [setCategories]);
 
   const [activeTab, setActiveTab] = useState<"categories" | "brands">("categories");
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");

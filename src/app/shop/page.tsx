@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import ProductCard from "@/components/shop/ProductCard";
 import QuickViewModal from "@/components/shop/QuickViewModal";
-import { MOCK_CATEGORIES, MOCK_BRANDS } from "@/lib/mockData";
+import { MOCK_BRANDS } from "@/lib/mockData";
 import { useProductStore, useCategoryStore, useBrandStore } from "@/lib/store";
 import { getProductsFromStore } from "@/lib/firestore";
 import { Product } from "@/types";
@@ -21,28 +21,37 @@ const SORT_OPTIONS = [
 function ShopContent() {
   const searchParams = useSearchParams();
   const { products: storeProducts, setProducts } = useProductStore();
-  const { categories: storeCategories } = useCategoryStore();
+  const { categories: storeCategories, setCategories: storeSetCategories } = useCategoryStore();
   const { brands: storeBrands } = useBrandStore();
 
   useEffect(() => {
     fetch("/api/products", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
-        if (data.success && Array.isArray(data.products) && data.products.length > 0) {
+        if (data.success && Array.isArray(data.products)) {
           setProducts(data.products);
         } else {
           getProductsFromStore().then((live) => {
-            if (live && live.length > 0) setProducts(live);
+            setProducts(live || []);
           });
         }
       })
       .catch(() => {
         getProductsFromStore().then((live) => {
-          if (live && live.length > 0) setProducts(live);
+          setProducts(live || []);
         });
       });
-  }, [setProducts]);
-  const categoriesList = storeCategories.length ? storeCategories : MOCK_CATEGORIES;
+
+    fetch("/api/categories", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.categories)) {
+          storeSetCategories(data.categories);
+        }
+      })
+      .catch(() => {});
+  }, [setProducts, storeSetCategories]);
+  const categoriesList = storeCategories;
   const brandsList = storeBrands.length ? storeBrands : MOCK_BRANDS;
   const [search, setSearch] = useState(searchParams.get("search") || "");
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get("category") || "");

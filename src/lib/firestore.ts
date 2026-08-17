@@ -41,19 +41,10 @@ export async function getProductsFromStore(): Promise<Product[]> {
       firestoreProducts.push({ id: docSnap.id, ...docSnap.data() } as Product);
     });
 
-    if (firestoreProducts.length > 0) {
-      // Merge with MOCK_PRODUCTS to preserve default rich catalog while giving priority to custom products
-      const customIds = new Set(firestoreProducts.map((p) => p.id));
-      const merged = [
-        ...firestoreProducts,
-        ...MOCK_PRODUCTS.filter((p) => !customIds.has(p.id))
-      ];
-      return merged;
-    }
-    return MOCK_PRODUCTS;
+    return firestoreProducts;
   } catch (err) {
     console.error("Firestore getProductsFromStore error:", err);
-    return MOCK_PRODUCTS;
+    return [];
   }
 }
 
@@ -80,17 +71,19 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
   return found || null;
 }
 
-// Categories Firestore API - Instant 0ms response
+// Categories Firestore API - Instant response
 export async function getCategoriesFromStore(): Promise<Category[]> {
-  return fetchWithInstantFallback(async () => {
+  try {
     const querySnapshot = await getDocs(collection(db, "categories"));
-    if (querySnapshot.empty) return MOCK_CATEGORIES;
     const categories: Category[] = [];
     querySnapshot.forEach((doc) => {
       categories.push({ id: doc.id, ...doc.data() } as Category);
     });
-    return categories.length ? categories : MOCK_CATEGORIES;
-  }, MOCK_CATEGORIES);
+    return categories;
+  } catch (err) {
+    console.error("Firestore getCategoriesFromStore error:", err);
+    return [];
+  }
 }
 
 export async function createCategoryInFirestore(catData: Partial<Category>): Promise<Category> {

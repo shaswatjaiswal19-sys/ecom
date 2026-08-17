@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { CartItem, Product, ProductVariant, Order, OrderStatus, Category, Brand } from "@/types";
-import { MOCK_PRODUCTS, MOCK_ORDERS, MOCK_CATEGORIES, MOCK_BRANDS } from "./mockData";
+import { MOCK_ORDERS, MOCK_BRANDS } from "./mockData";
 
 // SSR-Safe LocalStorage wrapper that prevents hydration crashes and ensures persistence
 const safeLocalStorage = {
@@ -220,44 +220,40 @@ interface ProductState {
   resetProducts: () => void;
 }
 
+const DEFAULT_MOCK_IDS = new Set(["p1", "p2", "p3", "p4", "p5", "p6"]);
+
 export const useProductStore = create<ProductState>()(
   persist(
     (set) => ({
-      products: MOCK_PRODUCTS,
-      setProducts: (products) => set({ products }),
+      products: [],
+      setProducts: (products) =>
+        set({
+          products: (products || []).filter((p) => !DEFAULT_MOCK_IDS.has(p.id)),
+        }),
       addProduct: (newProduct) => {
-        // Also keep memory array updated
-        const existingIdx = MOCK_PRODUCTS.findIndex((p) => p.id === newProduct.id);
-        if (existingIdx === -1) {
-          MOCK_PRODUCTS.unshift(newProduct);
-        }
+        if (DEFAULT_MOCK_IDS.has(newProduct.id)) return;
         set((state) => ({
           products: [newProduct, ...state.products.filter((p) => p.id !== newProduct.id)],
         }));
       },
       updateProduct: (id, updatedProduct) => {
-        const idx = MOCK_PRODUCTS.findIndex((p) => p.id === id);
-        if (idx > -1) {
-          MOCK_PRODUCTS[idx] = updatedProduct;
-        }
         set((state) => ({
           products: state.products.map((p) => (p.id === id ? updatedProduct : p)),
         }));
       },
       deleteProduct: (id) => {
-        const idx = MOCK_PRODUCTS.findIndex((p) => p.id === id);
-        if (idx > -1) {
-          MOCK_PRODUCTS.splice(idx, 1);
-        }
         set((state) => ({
           products: state.products.filter((p) => p.id !== id),
         }));
       },
-      resetProducts: () => set({ products: MOCK_PRODUCTS }),
+      resetProducts: () => set({ products: [] }),
     }),
     {
-      name: "shaswat-ecom-products-storage",
+      name: "manoj-traders-products-v3",
       storage: createJSONStorage(() => safeLocalStorage),
+      partialize: (state) => ({
+        products: state.products.filter((p) => !DEFAULT_MOCK_IDS.has(p.id)),
+      }),
     }
   )
 );
@@ -265,50 +261,52 @@ export const useProductStore = create<ProductState>()(
 // Persistent Categories Store
 interface CategoryState {
   categories: Category[];
+  setCategories: (categories: Category[]) => void;
   addCategory: (category: Category) => void;
   updateCategory: (id: string, updated: Category) => void;
   deleteCategory: (id: string) => void;
   resetCategories: () => void;
 }
 
+const DEFAULT_MOCK_CAT_IDS = new Set([
+  "cat-fruits-veg",
+  "cat-dairy-bakery",
+  "cat-staples-grains",
+  "cat-spices-oils",
+]);
+
 export const useCategoryStore = create<CategoryState>()(
   persist(
     (set) => ({
-      categories: MOCK_CATEGORIES,
+      categories: [],
+      setCategories: (categories) =>
+        set({
+          categories: (categories || []).filter((c) => !DEFAULT_MOCK_CAT_IDS.has(c.id)),
+        }),
       addCategory: (newCat) => {
-        const existingIdx = MOCK_CATEGORIES.findIndex((c) => c.id === newCat.id);
-        if (existingIdx === -1) {
-          MOCK_CATEGORIES.unshift(newCat);
-        } else {
-          MOCK_CATEGORIES[existingIdx] = newCat;
-        }
+        if (DEFAULT_MOCK_CAT_IDS.has(newCat.id)) return;
         set((state) => ({
           categories: [newCat, ...state.categories.filter((c) => c.id !== newCat.id)],
         }));
       },
       updateCategory: (id, updated) => {
-        const idx = MOCK_CATEGORIES.findIndex((c) => c.id === id);
-        if (idx > -1) {
-          MOCK_CATEGORIES[idx] = updated;
-        }
         set((state) => ({
           categories: state.categories.map((c) => (c.id === id ? updated : c)),
         }));
       },
       deleteCategory: (id) => {
-        const idx = MOCK_CATEGORIES.findIndex((c) => c.id === id);
-        if (idx > -1) {
-          MOCK_CATEGORIES.splice(idx, 1);
-        }
         set((state) => ({
           categories: state.categories.filter((c) => c.id !== id),
         }));
       },
-      resetCategories: () => set({ categories: MOCK_CATEGORIES }),
+      resetCategories: () => set({ categories: [] }),
     }),
     {
-      name: "shaswat-ecom-categories-storage",
+      name: "manoj-traders-categories-v3",
       storage: createJSONStorage(() => safeLocalStorage),
+      partialize: (state) => ({
+        categories: state.categories.filter((c) => !DEFAULT_MOCK_CAT_IDS.has(c.id)),
+      }),
     }
   )
 );

@@ -99,75 +99,15 @@ export default function Navbar() {
               Home
             </Link>
 
-            {/* Mega Menu for Grocery Aisles */}
-            <div
-              className="relative"
-              onMouseEnter={() => setMegaMenuOpen(true)}
-              onMouseLeave={() => setMegaMenuOpen(false)}
+            {/* Grocery Aisles Supermarket Catalog */}
+            <Link
+              href="/shop"
+              prefetch={true}
+              className="flex items-center gap-1 hover:text-amber-500 transition-colors py-2"
             >
-              <Link
-                href="/shop"
-                prefetch={true}
-                className="flex items-center gap-1 hover:text-amber-500 transition-colors py-2"
-              >
-                Grocery Aisles <ChevronDown className="w-4 h-4 text-amber-500" />
-              </Link>
-
-              {megaMenuOpen && (
-                <div className="absolute top-full left-1/2 -translate-x-1/2 w-[620px] bg-white dark:bg-zinc-900 rounded-3xl p-6 shadow-2xl border border-black/5 dark:border-white/10 grid grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2 z-50">
-                  <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-amber-500 mb-3 flex items-center gap-1.5">
-                      <Wheat className="w-4 h-4" /> Produce & Staples
-                    </h4>
-                    <ul className="space-y-2.5 text-xs font-medium text-zinc-600 dark:text-zinc-300">
-                      <li>
-                        <Link href="/shop?category=Atta,%20Rice%20%26%20Organic%20Staples" prefetch={true} className="hover:text-amber-500 transition-colors">
-                          🌾 Atta, Aged Basmati Rice & Dal
-                        </Link>
-                      </li>
-                      <li>
-                        <Link href="/shop?category=Organic%20Fruits%20%26%20Vegetables" prefetch={true} className="hover:text-amber-500 transition-colors">
-                          🍎 Organic Farm Fruits & Veggies
-                        </Link>
-                      </li>
-                      <li>
-                        <Link href="/shop?category=Dairy,%20Eggs%20%26%20Bakery" prefetch={true} className="hover:text-amber-500 transition-colors">
-                          🥛 A2 Gir Cow Ghee & Farm Dairy
-                        </Link>
-                      </li>
-                      <li>
-                        <Link href="/shop?category=Gourmet%20Spices%20%26%20Cold-Pressed%20Oils" prefetch={true} className="hover:text-amber-500 transition-colors">
-                          🌶️ Kachi Ghani Oils & Kashmiri Saffron
-                        </Link>
-                      </li>
-                    </ul>
-                  </div>
-
-                  <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-amber-500 mb-3 flex items-center gap-1.5">
-                      <Sparkles className="w-4 h-4" /> Supermarket Offers
-                    </h4>
-                    <ul className="space-y-2.5 text-xs font-medium text-zinc-600 dark:text-zinc-300">
-                      <li>
-                        <Link href="/shop?filter=flash-sale" prefetch={true} className="hover:text-amber-500 transition-colors font-bold text-amber-500">
-                          🔥 Daily Grocery Flash Sale (Up to 30% OFF)
-                        </Link>
-                      </li>
-                      <li>
-                        <Link href="/shop?filter=best-sellers" prefetch={true} className="hover:text-amber-500 transition-colors">
-                          ⭐ Top Selling Organic Staples
-                        </Link>
-                      </li>
-                      <li>
-                        <Link href="/compare" prefetch={true} className="hover:text-amber-500 transition-colors">
-                          📊 Product Price & Spec Comparison
-                        </Link>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              )}
-            </div>
+              <Wheat className="w-4 h-4 text-amber-500" />
+              <span>Grocery Aisles</span>
+            </Link>
 
             <Link href="/account/orders" prefetch={true} className="hover:text-amber-500 transition-colors flex items-center gap-1 font-bold">
               <Package className="w-3.5 h-3.5 text-amber-500" /> Orders
