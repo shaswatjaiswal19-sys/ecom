@@ -1,31 +1,14 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import {
   ArrowRight,
-  Shield,
-  Truck,
-  Award,
-  Zap,
   ChevronRight,
-  TrendingUp,
   Flame,
   Sparkles,
-  ShoppingBag,
-  Wheat,
-  Apple,
-  Milk,
-  RotateCw,
-  Move3d,
-  CheckCircle2,
-  Heart,
-  Eye,
-  ShieldCheck,
-  Package,
 } from "lucide-react";
 import ProductCard from "@/components/shop/ProductCard";
 import QuickViewModal from "@/components/shop/QuickViewModal";
@@ -35,19 +18,6 @@ import { useProductStore, useCategoryStore } from "@/lib/store";
 import { getProductsFromStore } from "@/lib/firestore";
 import { formatCurrency } from "@/lib/utils";
 import { Product } from "@/types";
-
-// Dynamic 350° Kirana 3D Canvas
-const Kirana3DStoreCanvas = dynamic(() => import("@/components/3d/Kirana3DStoreCanvas"), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-[520px] sm:h-[580px] lg:h-[620px] rounded-3xl bg-gradient-to-b from-amber-500/10 via-zinc-900 to-zinc-950 flex flex-col items-center justify-center gap-3 border border-amber-500/20">
-      <div className="w-14 h-14 rounded-full border-4 border-amber-500/20 border-t-amber-500 animate-spin" />
-      <span className="text-xs font-bold text-amber-400 animate-pulse">
-        Loading 350° Kirana 3D Showcase...
-      </span>
-    </div>
-  ),
-});
 
 const MARQUEE_ITEMS = [
   "🌾 100% Shudh A2 Gir Cow Bilona Ghee",
@@ -59,8 +29,6 @@ const MARQUEE_ITEMS = [
   "🚚 24-Hour Express Doorstep Kirana Delivery",
   "🛡️ Zero Pesticides & Direct Farm-Sourced",
 ];
-
-
 
 const FAQS = [
   {
@@ -128,82 +96,86 @@ export default function HomePage() {
         className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-amber-400 to-emerald-500 origin-left z-50 shadow-sm"
       />
 
-      {/* ===== HERO SECTION WITH 350° 3D KIRANA ORBIT SHOWCASE ===== */}
-      <section className="relative min-h-[92vh] flex items-center overflow-hidden py-10 lg:py-16">
+      {/* ===== CLEAN CENTERED HERO SECTION ===== */}
+      <section className="relative min-h-[78vh] flex items-center justify-center overflow-hidden py-16 lg:py-24">
         {/* Ambient Kirana Gold & Emerald Atmospheric Glows */}
         <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-emerald-500/5 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900 pointer-events-none" />
-        <div className="absolute top-1/4 right-0 w-[550px] h-[550px] rounded-full bg-amber-500/10 blur-[130px] pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[450px] h-[450px] rounded-full bg-emerald-500/10 blur-[120px] pointer-events-none" />
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-amber-500/10 blur-[140px] pointer-events-none" />
+        <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full bg-emerald-500/10 blur-[120px] pointer-events-none" />
 
         <motion.div
           style={{ opacity: heroOpacity, y: heroY }}
-          className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center w-full"
+          className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center w-full space-y-8"
         >
-          {/* Left Text Column (5 cols) */}
+          {/* Top Badge */}
           <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="lg:col-span-5 space-y-7 text-left"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs sm:text-sm font-black tracking-wider uppercase shadow-xs"
           >
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-black tracking-wider uppercase shadow-xs">
-              <Sparkles className="w-4 h-4 text-amber-500 animate-pulse" />
-              <span>India's Premier Organic Kirana Store</span>
-            </div>
-
-            <div className="space-y-4">
-              <h1 className="text-4xl sm:text-6xl lg:text-6xl font-black tracking-tight leading-[1.08] text-zinc-900 dark:text-white">
-                Pure Kirana. <br />
-                <span className="gold-gradient-text">Farm Fresh Daily.</span>
-              </h1>
-              <p className="text-zinc-600 dark:text-zinc-300 text-sm sm:text-base leading-relaxed max-w-lg">
-                Experience authentic purity — A2 Gir cow Bilona ghee, 2-year aged Royal Basmati rice, hand-picked Ratnagiri Alphonso mangoes, cold-pressed oils, and heritage spices delivered straight to your kitchen in 24 hours.
-              </p>
-            </div>
-
-            {/* CTAs */}
-            <div className="flex flex-wrap items-center gap-4 pt-1">
-              <Link
-                href="/shop"
-                className="px-7 py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-black text-sm transition-all shadow-xl shadow-amber-500/25 flex items-center gap-2 hover:gap-3 group"
-              >
-                <span>Shop Kirana Essentials</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-              <Link
-                href="/shop?filter=flash-sale"
-                className="px-6 py-4 rounded-2xl bg-zinc-100 dark:bg-zinc-850 text-zinc-900 dark:text-white hover:bg-zinc-200 dark:hover:bg-zinc-800 font-bold text-sm transition-all border border-zinc-200 dark:border-zinc-700 flex items-center gap-2"
-              >
-                <Flame className="w-4 h-4 text-amber-500" />
-                <span>Today's Flash Deals</span>
-              </Link>
-            </div>
-
-            {/* Kirana Trust Badges */}
-            <div className="grid grid-cols-3 gap-4 pt-6 border-t border-zinc-200 dark:border-zinc-800">
-              <div className="space-y-0.5">
-                <div className="text-2xl font-black text-amber-500">24-Hr</div>
-                <div className="text-[11px] text-zinc-500 font-bold">Express Kirana</div>
-              </div>
-              <div className="space-y-0.5">
-                <div className="text-2xl font-black text-emerald-500">100%</div>
-                <div className="text-[11px] text-zinc-500 font-bold">Shudh & Organic</div>
-              </div>
-              <div className="space-y-0.5">
-                <div className="text-2xl font-black text-amber-500">500K+</div>
-                <div className="text-[11px] text-zinc-500 font-bold">Happy Homes</div>
-              </div>
-            </div>
+            <Sparkles className="w-4 h-4 text-amber-500 animate-pulse" />
+            <span>India's Premier Organic Kirana Store</span>
           </motion.div>
 
-          {/* Right 350° 3D Kirana Orbit Canvas (7 cols) */}
+          {/* Heading & Subtitle */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.92 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.9, delay: 0.15, ease: "easeOut" }}
-            className="lg:col-span-7 w-full"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
+            className="space-y-5 max-w-3xl"
           >
-            <Kirana3DStoreCanvas />
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.08] text-zinc-900 dark:text-white">
+              Pure Kirana. <br className="hidden sm:inline" />
+              <span className="gold-gradient-text">Farm Fresh Daily.</span>
+            </h1>
+            <p className="text-zinc-600 dark:text-zinc-300 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto">
+              Experience authentic purity — A2 Gir cow Bilona ghee, 2-year aged Royal Basmati rice, hand-picked Ratnagiri Alphonso mangoes, cold-pressed oils, and heritage spices delivered straight to your kitchen in 24 hours.
+            </p>
+          </motion.div>
+
+          {/* CTAs */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
+            className="flex flex-wrap items-center justify-center gap-4 pt-2"
+          >
+            <Link
+              href="/shop"
+              className="px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-black text-sm sm:text-base transition-all shadow-xl shadow-amber-500/25 flex items-center gap-2 hover:gap-3 group"
+            >
+              <span>Shop Kirana Essentials</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
+            <Link
+              href="/shop?filter=flash-sale"
+              className="px-7 py-4 rounded-2xl bg-zinc-100 dark:bg-zinc-850 text-zinc-900 dark:text-white hover:bg-zinc-200 dark:hover:bg-zinc-800 font-bold text-sm sm:text-base transition-all border border-zinc-200 dark:border-zinc-700 flex items-center gap-2"
+            >
+              <Flame className="w-4 h-4 text-amber-500" />
+              <span>Today's Flash Deals</span>
+            </Link>
+          </motion.div>
+
+          {/* Kirana Trust Badges */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.3, ease: "easeOut" }}
+            className="grid grid-cols-3 gap-8 sm:gap-16 pt-8 border-t border-zinc-200 dark:border-zinc-800/80 max-w-xl w-full"
+          >
+            <div className="space-y-1 text-center">
+              <div className="text-2xl sm:text-3xl font-black text-amber-500">24-Hr</div>
+              <div className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 font-bold">Express Kirana</div>
+            </div>
+            <div className="space-y-1 text-center">
+              <div className="text-2xl sm:text-3xl font-black text-emerald-500">100%</div>
+              <div className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 font-bold">Shudh & Organic</div>
+            </div>
+            <div className="space-y-1 text-center">
+              <div className="text-2xl sm:text-3xl font-black text-amber-500">500K+</div>
+              <div className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 font-bold">Happy Homes</div>
+            </div>
           </motion.div>
         </motion.div>
       </section>
