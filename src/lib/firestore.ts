@@ -391,7 +391,8 @@ export async function deleteProductInFirestore(id: string): Promise<boolean> {
 export async function updateOrderStatusInFirestore(
   orderId: string,
   newStatus: Order["status"],
-  note?: string
+  note?: string,
+  paymentStatus?: Order["paymentStatus"]
 ): Promise<boolean> {
   const updatedAt = new Date().toISOString();
   const timelineItem = {
@@ -400,27 +401,51 @@ export async function updateOrderStatusInFirestore(
     note: note || `Order status updated to ${newStatus}`,
   };
 
-  // Update in Firestore
+  const updatePayload: any = {
+    status: newStatus,
+    updatedAt,
+  };
+  if (paymentStatus) {
+    updatePayload.paymentStatus = paymentStatus;
+  }
+
+  // 1. Update in Firestore
   try {
     const orderRef = doc(db, "orders", orderId);
-    await updateDoc(orderRef, {
-      status: newStatus,
-      updatedAt,
-    });
+    let updated = false;
+    try {
+      await updateDoc(orderRef, updatePayload);
+      updated = true;
+    } catch {
+      // Document might be keyed by another ID, search by orderNumber or id
+      const q = query(
+        collection(db, "orders"),
+        where("orderNumber", "==", orderId)
+      );
+      const querySnapshot = await getDocs(q);
+      querySnapshot.forEach(async (docSnap) => {
+        await updateDoc(doc(db, "orders", docSnap.id), updatePayload);
+        updated = true;
+      });
+    }
   } catch (err) {
     console.error("Error updating order status in Firestore:", err);
   }
 
-  // Update in local store
+  // 2. Update in local store
   try {
     const { useOrderStore } = require("./store");
-    useOrderStore.getState().updateOrderStatus(orderId, newStatus, note);
+    useOrderStore.getState().updateOrderStatus(orderId, newStatus, note, paymentStatus);
   } catch {}
 
+  // 3. Update in memory MOCK_ORDERS array
   const foundOrder = MOCK_ORDERS.find((o) => o.id === orderId || o.orderNumber === orderId);
   if (foundOrder) {
     foundOrder.status = newStatus;
     foundOrder.updatedAt = updatedAt;
+    if (paymentStatus) {
+      foundOrder.paymentStatus = paymentStatus;
+    }
     if (!foundOrder.timeline) foundOrder.timeline = [];
     foundOrder.timeline.push(timelineItem);
   }

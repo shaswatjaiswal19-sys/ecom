@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useOrderStore } from "@/lib/store";
 import { formatCurrency } from "@/lib/utils";
 import { MOCK_ORDERS } from "@/lib/mockData";
+import { getOrdersFromStore } from "@/lib/firestore";
 import { Search, Package, Truck, CheckCircle2, Clock, XCircle, ShieldCheck, MapPin, Calendar, ArrowRight, Download, Phone, Map } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -22,11 +24,38 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string; icon: React.Ele
 
 const ORDER_STATUS_STEPS = ["Placed", "Confirmed", "Packed", "Shipped", "Out for Delivery", "Delivered"];
 
-export default function PublicOrderTrackerPage() {
-  const { orders: storeOrders } = useOrderStore();
-  const [searchQuery, setSearchQuery] = useState("");
+function OrderTrackerContent() {
+  const searchParams = useSearchParams();
+  const initialOrderId = searchParams.get("orderId") || searchParams.get("order") || "";
+  const { orders: storeOrders, setOrders } = useOrderStore();
+  const [searchQuery, setSearchQuery] = useState(initialOrderId);
   const [searchedOrder, setSearchedOrder] = useState<any | null>(null);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [hasSearched, setHasSearched] = useState(Boolean(initialOrderId));
+
+  useEffect(() => {
+    // Fetch live orders from database to ensure up-to-date tracking status
+    getOrdersFromStore().then((live) => {
+      if (live && live.length > 0) setOrders(live);
+    });
+  }, [setOrders]);
+
+  useEffect(() => {
+    if (initialOrderId) {
+      setSearchQuery(initialOrderId);
+      const query = initialOrderId.trim().toLowerCase();
+      const allOrders = [...storeOrders, ...MOCK_ORDERS];
+      const found = allOrders.find(
+        (o) =>
+          o.orderNumber.toLowerCase() === query ||
+          o.id.toLowerCase() === query ||
+          o.customerPhone?.includes(query) ||
+          o.customerEmail?.toLowerCase() === query
+      );
+      if (found) {
+        setSearchedOrder(found);
+      }
+    }
+  }, [initialOrderId, storeOrders]);
 
   const handleTrackSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,8 +70,8 @@ export default function PublicOrderTrackerPage() {
       (o) =>
         o.orderNumber.toLowerCase() === query ||
         o.id.toLowerCase() === query ||
-        o.customerPhone.includes(query) ||
-        o.customerEmail.toLowerCase() === query
+        o.customerPhone?.includes(query) ||
+        o.customerEmail?.toLowerCase() === query
     );
 
     setHasSearched(true);
@@ -210,5 +239,22 @@ export default function PublicOrderTrackerPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PublicOrderTrackerPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col items-center justify-center p-6 space-y-4 animate-pulse">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500 flex items-center justify-center text-zinc-950 font-black text-xl shadow-lg">
+            M
+          </div>
+          <div className="text-xs text-zinc-400 font-mono">Loading GPS Tracking...</div>
+        </div>
+      }
+    >
+      <OrderTrackerContent />
+    </Suspense>
   );
 }

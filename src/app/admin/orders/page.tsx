@@ -6,7 +6,7 @@ import { Order, OrderStatus } from "@/types";
 import { formatCurrency } from "@/lib/utils";
 import { db } from "@/lib/firebase";
 import { collection, onSnapshot } from "firebase/firestore";
-import { getOrdersFromStore } from "@/lib/firestore";
+import { getOrdersFromStore, updateOrderStatusInFirestore } from "@/lib/firestore";
 import {
   Package,
   Search,
@@ -29,6 +29,7 @@ import {
   LayoutGrid,
   ExternalLink,
   RefreshCw,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -66,6 +67,7 @@ export default function AdminOrdersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "cards">("list");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
   const fetchLatestOrders = useCallback(async (showToast = false) => {
     setIsRefreshing(true);
@@ -101,10 +103,10 @@ export default function AdminOrdersPage() {
   useEffect(() => {
     fetchLatestOrders();
 
-    // Periodic sync every 6 seconds
+    // Periodic sync every 8 seconds
     const interval = setInterval(() => {
       fetchLatestOrders();
-    }, 6000);
+    }, 8000);
 
     // Set up real-time listener for Firestore orders
     let unsubscribe: () => void = () => {};
@@ -169,32 +171,112 @@ export default function AdminOrdersPage() {
     return matchesSearch && matchesTab;
   });
 
-  const handleNextStep = (orderId: string, currentStatus: OrderStatus) => {
+  const handleNextStep = async (orderId: string, currentStatus: OrderStatus) => {
     const next = getNextAction(currentStatus);
-    if (next) {
-      updateOrderStatus(orderId, next.nextStatus, `Order status advanced to ${next.nextStatus}`);
-      toast.success(`Order status updated to ${next.nextStatus}! 🎉`);
+    if (!next) return;
+
+    setUpdatingOrderId(orderId);
+    const note = `Order status advanced to ${next.nextStatus}`;
+
+    // 1. Optimistic Instant UI Update
+    updateOrderStatus(orderId, next.nextStatus, note);
+
+    try {
+      // 2. Direct Firestore SDK update
+      await updateOrderStatusInFirestore(orderId, next.nextStatus, note);
+
+      // 3. Server API route PATCH update
+      await fetch("/api/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId,
+          status: next.nextStatus,
+          note,
+        }),
+      }).catch((e) => console.warn("API PATCH /api/orders notice:", e));
+
+      toast.success(`Order advanced to "${next.nextStatus}"! 🎉`);
+    } catch (err) {
+      console.error("Failed to advance order status:", err);
+      toast.error("Status updated locally, but database sync encountered an error.");
+    } finally {
+      setUpdatingOrderId(null);
     }
   };
 
-  const handleApproveUPI = (orderId: string) => {
-    const targetOrder = orders.find((o) => o.id === orderId);
+  const handleApproveUPI = async (orderId: string) => {
+    setUpdatingOrderId(orderId);
+    const targetOrder = orders.find((o) => o.id === orderId || o.orderNumber === orderId);
+    const note = "UPI Payment verified and confirmed by Admin";
+
+    // 1. Optimistic Instant UI Update
     if (targetOrder) {
       targetOrder.paymentStatus = "Paid";
       targetOrder.status = "Confirmed";
     }
-    updateOrderStatus(orderId, "Confirmed", "UPI Payment verified and confirmed by Admin");
-    toast.success(`UPI Payment verified! Order #${targetOrder?.orderNumber || orderId} confirmed.`);
+    updateOrderStatus(orderId, "Confirmed", note, "Paid");
+
+    try {
+      // 2. Direct Firestore SDK update
+      await updateOrderStatusInFirestore(orderId, "Confirmed", note, "Paid");
+
+      // 3. Server API route PATCH update
+      await fetch("/api/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId,
+          status: "Confirmed",
+          paymentStatus: "Paid",
+          note,
+        }),
+      }).catch((e) => console.warn("API PATCH notice:", e));
+
+      toast.success(`UPI Payment verified! Order #${targetOrder?.orderNumber || orderId} confirmed.`);
+    } catch (err) {
+      console.error("Failed to approve UPI:", err);
+      toast.error("Failed to update database.");
+    } finally {
+      setUpdatingOrderId(null);
+    }
   };
 
-  const handleApproveCancellation = (orderId: string) => {
-    const targetOrder = orders.find((o) => o.id === orderId);
+  const handleApproveCancellation = async (orderId: string) => {
+    setUpdatingOrderId(orderId);
+    const targetOrder = orders.find((o) => o.id === orderId || o.orderNumber === orderId);
+    const note = "Cancellation approved and refund processed by Admin";
+
+    // 1. Optimistic Instant UI Update
     if (targetOrder) {
       targetOrder.paymentStatus = "Refunded";
       targetOrder.status = "Cancelled";
     }
-    updateOrderStatus(orderId, "Cancelled", "Cancellation approved and refund processed by Admin");
-    toast.success(`Cancellation approved & refund processed for Order #${targetOrder?.orderNumber || orderId}!`);
+    updateOrderStatus(orderId, "Cancelled", note, "Refunded");
+
+    try {
+      // 2. Direct Firestore SDK update
+      await updateOrderStatusInFirestore(orderId, "Cancelled", note, "Refunded");
+
+      // 3. Server API route PATCH update
+      await fetch("/api/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId,
+          status: "Cancelled",
+          paymentStatus: "Refunded",
+          note,
+        }),
+      }).catch((e) => console.warn("API PATCH notice:", e));
+
+      toast.success(`Cancellation approved & refund processed for Order #${targetOrder?.orderNumber || orderId}!`);
+    } catch (err) {
+      console.error("Failed to approve cancellation:", err);
+      toast.error("Failed to update database.");
+    } finally {
+      setUpdatingOrderId(null);
+    }
   };
 
   const handleCopyAddress = (address: any) => {
@@ -413,24 +495,51 @@ export default function AdminOrdersPage() {
                 <div className="flex items-center gap-2 justify-end">
                   {o.paymentStatus === "Pending Verification" ? (
                     <button
-                      onClick={() => handleApproveUPI(o.id)}
-                      className="px-3.5 py-2 rounded-xl bg-emerald-500 text-zinc-950 font-black text-xs hover:bg-emerald-400 transition-colors shadow-sm whitespace-nowrap flex items-center gap-1"
+                      onClick={() => handleApproveUPI(o.id || o.orderNumber)}
+                      disabled={updatingOrderId === (o.id || o.orderNumber)}
+                      className="px-3.5 py-2 rounded-xl bg-emerald-500 text-zinc-950 font-black text-xs hover:bg-emerald-400 transition-colors shadow-sm whitespace-nowrap flex items-center gap-1 cursor-pointer disabled:opacity-50"
                     >
-                      <Check className="w-3.5 h-3.5" /> Approve UPI
+                      {updatingOrderId === (o.id || o.orderNumber) ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Verifying...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-3.5 h-3.5" /> Approve UPI
+                        </>
+                      )}
                     </button>
                   ) : o.status === "Cancellation Requested" ? (
                     <button
-                      onClick={() => handleApproveCancellation(o.id)}
-                      className="px-3.5 py-2 rounded-xl bg-rose-500 text-white font-black text-xs hover:bg-rose-600 transition-colors shadow-sm whitespace-nowrap flex items-center gap-1"
+                      onClick={() => handleApproveCancellation(o.id || o.orderNumber)}
+                      disabled={updatingOrderId === (o.id || o.orderNumber)}
+                      className="px-3.5 py-2 rounded-xl bg-rose-500 text-white font-black text-xs hover:bg-rose-600 transition-colors shadow-sm whitespace-nowrap flex items-center gap-1 cursor-pointer disabled:opacity-50"
                     >
-                      <Check className="w-3.5 h-3.5" /> Approve Cancel
+                      {updatingOrderId === (o.id || o.orderNumber) ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-3.5 h-3.5" /> Approve Cancel
+                        </>
+                      )}
                     </button>
                   ) : nextAction ? (
                     <button
-                      onClick={() => handleNextStep(o.id, o.status)}
-                      className={`px-3.5 py-2 rounded-xl text-xs font-black transition-colors shadow-sm whitespace-nowrap flex items-center gap-1 ${nextAction.bg}`}
+                      onClick={() => handleNextStep(o.id || o.orderNumber, o.status)}
+                      disabled={updatingOrderId === (o.id || o.orderNumber)}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-black transition-colors shadow-sm whitespace-nowrap flex items-center gap-1 cursor-pointer disabled:opacity-50 ${nextAction.bg}`}
                     >
-                      <Check className="w-3.5 h-3.5" /> {nextAction.label}
+                      {updatingOrderId === (o.id || o.orderNumber) ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Advancing...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-3.5 h-3.5" /> {nextAction.label}
+                        </>
+                      )}
                     </button>
                   ) : (
                     <span className="text-xs font-semibold text-emerald-500 flex items-center gap-1">
@@ -510,10 +619,19 @@ export default function AdminOrdersPage() {
                     </div>
 
                     <button
-                      onClick={() => handleApproveUPI(o.id)}
-                      className="px-5 py-2.5 rounded-2xl bg-emerald-500 text-zinc-950 font-black text-xs hover:bg-emerald-400 transition-colors shadow-lg shadow-emerald-500/20 cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
+                      onClick={() => handleApproveUPI(o.id || o.orderNumber)}
+                      disabled={updatingOrderId === (o.id || o.orderNumber)}
+                      className="px-5 py-2.5 rounded-2xl bg-emerald-500 text-zinc-950 font-black text-xs hover:bg-emerald-400 transition-colors shadow-lg shadow-emerald-500/20 cursor-pointer flex items-center gap-1.5 whitespace-nowrap disabled:opacity-50"
                     >
-                      <Check className="w-4 h-4" /> Confirm UPI Payment (Mark Paid)
+                      {updatingOrderId === (o.id || o.orderNumber) ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" /> Verifying...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-4 h-4" /> Confirm UPI Payment (Mark Paid)
+                        </>
+                      )}
                     </button>
                   </div>
                 )}
@@ -541,10 +659,19 @@ export default function AdminOrdersPage() {
                     </div>
 
                     <button
-                      onClick={() => handleApproveCancellation(o.id)}
-                      className="px-5 py-2.5 rounded-2xl bg-rose-500 text-white font-black text-xs hover:bg-rose-600 transition-colors shadow-lg shadow-rose-500/20 cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
+                      onClick={() => handleApproveCancellation(o.id || o.orderNumber)}
+                      disabled={updatingOrderId === (o.id || o.orderNumber)}
+                      className="px-5 py-2.5 rounded-2xl bg-rose-500 text-white font-black text-xs hover:bg-rose-600 transition-colors shadow-lg shadow-rose-500/20 cursor-pointer flex items-center gap-1.5 whitespace-nowrap disabled:opacity-50"
                     >
-                      <Check className="w-4 h-4" /> Approve Cancellation & Refund
+                      {updatingOrderId === (o.id || o.orderNumber) ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" /> Processing...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-4 h-4" /> Approve Cancellation & Refund
+                        </>
+                      )}
                     </button>
                   </div>
                 )}
@@ -678,10 +805,19 @@ export default function AdminOrdersPage() {
                     {/* 1-Click Next Step Action Button */}
                     {nextAction && (
                       <button
-                        onClick={() => handleNextStep(o.id, o.status)}
-                        className={`px-5 py-2.5 rounded-2xl font-black text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer ${nextAction.bg}`}
+                        onClick={() => handleNextStep(o.id || o.orderNumber, o.status)}
+                        disabled={updatingOrderId === (o.id || o.orderNumber)}
+                        className={`px-5 py-2.5 rounded-2xl font-black text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-50 ${nextAction.bg}`}
                       >
-                        {nextAction.label} <ArrowRight className="w-4 h-4" />
+                        {updatingOrderId === (o.id || o.orderNumber) ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" /> Advancing...
+                          </>
+                        ) : (
+                          <>
+                            {nextAction.label} <ArrowRight className="w-4 h-4" />
+                          </>
+                        )}
                       </button>
                     )}
                   </div>

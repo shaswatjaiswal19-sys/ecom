@@ -62,13 +62,13 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { orderId, status, note } = body;
+    const { orderId, status, note, paymentStatus } = body;
 
     if (!orderId || !status) {
       return NextResponse.json({ success: false, error: "Order ID and status are required" }, { status: 400 });
     }
 
-    await updateOrderStatusInStore(orderId, status, note);
+    await updateOrderStatusInStore(orderId, status, note, paymentStatus);
     return NextResponse.json({ success: true, message: `Order status updated to ${status}` });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message || "Failed to update order status" }, { status: 500 });

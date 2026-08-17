@@ -359,7 +359,7 @@ interface OrderState {
   orders: Order[];
   setOrders: (orders: Order[]) => void;
   addOrder: (newOrder: Order) => void;
-  updateOrderStatus: (orderId: string, status: OrderStatus, note?: string) => void;
+  updateOrderStatus: (orderId: string, status: OrderStatus, note?: string, paymentStatus?: Order["paymentStatus"]) => void;
   requestCancellation: (orderId: string, reason: string, refundDetails: any) => void;
   resetOrders: () => void;
 }
@@ -376,7 +376,7 @@ export const useOrderStore = create<OrderState>()(
           );
           return { orders: [newOrder, ...filtered] };
         }),
-      updateOrderStatus: (orderId, newStatus, note) =>
+      updateOrderStatus: (orderId, newStatus, note, paymentStatus) =>
         set((state) => ({
           orders: state.orders.map((o) => {
             if (o.id === orderId || o.orderNumber === orderId) {
@@ -391,6 +391,7 @@ export const useOrderStore = create<OrderState>()(
               return {
                 ...o,
                 status: newStatus,
+                ...(paymentStatus ? { paymentStatus } : {}),
                 updatedAt: new Date().toISOString(),
                 timeline: updatedTimeline,
               };
