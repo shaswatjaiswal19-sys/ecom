@@ -81,11 +81,11 @@ export default function Navbar() {
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-amber-500 flex items-center justify-center text-zinc-950 font-black text-xl shadow-md group-hover:scale-105 transition-transform">
-              S
+              M
             </div>
             <div className="flex flex-col">
               <span className="font-black text-lg tracking-tight uppercase text-zinc-900 dark:text-white leading-none">
-                SHASWAT ECOM
+                MANOJ TRADERS
               </span>
               <span className="text-[10px] tracking-widest text-emerald-600 dark:text-amber-400 font-bold uppercase mt-0.5">
                 Fresh Groceries. Trusted Service.

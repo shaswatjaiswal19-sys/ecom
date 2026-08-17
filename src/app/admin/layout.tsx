@@ -38,7 +38,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return (
       <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-6 space-y-4 animate-pulse">
         <div className="w-12 h-12 rounded-2xl bg-amber-500 flex items-center justify-center text-zinc-950 font-black text-xl shadow-lg">
-          S
+          M
         </div>
         <div className="text-xs text-zinc-400 font-mono">Verifying Admin Authorization...</div>
       </div>
@@ -57,7 +57,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="space-y-2">
             <h1 className="text-2xl font-black text-white uppercase tracking-tight">Admin Authorization Required</h1>
             <p className="text-xs text-zinc-400 leading-relaxed">
-              This control panel is restricted exclusively to authorized <strong className="text-amber-400">Shaswat Ecom</strong> administrators.
+              This control panel is restricted exclusively to authorized <strong className="text-amber-400">Manoj Traders</strong> administrators.
             </p>
             {userEmail ? (
               <div className="mt-3 p-3 rounded-2xl bg-zinc-950 border border-zinc-800 text-xs font-mono text-zinc-400">
@@ -118,10 +118,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
           <Link href="/admin" onClick={() => setSidebarOpen(false)} className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-amber-500 flex items-center justify-center text-zinc-950 font-black text-lg shadow-md">
-              S
+              M
             </div>
             <div>
-              <div className="text-sm font-black tracking-tight gold-gradient-text uppercase">Shaswat Ecom</div>
+              <div className="text-sm font-black tracking-tight gold-gradient-text uppercase">Manoj Traders</div>
               <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-1">
                 <Shield className="w-2.5 h-2.5 text-amber-500" /> Admin Supermarket
               </div>

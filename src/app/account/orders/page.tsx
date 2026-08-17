@@ -124,7 +124,7 @@ export default function OrdersPage() {
         discountPercentage: 20,
         gstPercentage: 5,
         category: "Atta, Rice & Organic Staples",
-        brand: "Shaswat Ecom",
+        brand: "Manoj Traders",
         sku: "SKU-REORDER",
         barcode: "8901234567890",
         stock: 50,

@@ -2,8 +2,8 @@ import { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Shaswat Ecom - Quality Groceries. Trusted Service.",
-    short_name: "Shaswat Ecom",
+    name: "Manoj Traders - Quality Groceries. Trusted Service.",
+    short_name: "Manoj Traders",
     description: "India's premier supermarket for 100% farm-fresh organic produce and heritage groceries.",
     start_url: "/",
     display: "standalone",

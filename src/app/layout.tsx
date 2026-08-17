@@ -17,13 +17,13 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
   title: {
-    default: "SHASWAT ECOM | Fresh Groceries. Trusted Quality.",
-    template: "%s | SHASWAT ECOM",
+    default: "MANOJ TRADERS | Fresh Groceries. Trusted Quality.",
+    template: "%s | MANOJ TRADERS",
   },
   description:
-    "Shaswat Ecom — India's premier supermarket for 100% farm-fresh organic produce, aged Basmati rice, A2 Gir cow Bilona ghee, cold-pressed oils, and heritage spices delivered in 24 hours.",
-  keywords: ["Shaswat Ecom", "Organic Supermarket", "Basmati Rice", "A2 Ghee", "Fresh Mangoes", "Cold Pressed Oil"],
-  authors: [{ name: "Shaswat Ecom" }],
+    "Manoj Traders — India's premier supermarket for 100% farm-fresh organic produce, aged Basmati rice, A2 Gir cow Bilona ghee, cold-pressed oils, and heritage spices delivered in 24 hours.",
+  keywords: ["Manoj Traders", "Organic Supermarket", "Basmati Rice", "A2 Ghee", "Fresh Mangoes", "Cold Pressed Oil"],
+  authors: [{ name: "Manoj Traders" }],
   openGraph: {
     type: "website",
     locale: "en_IN",

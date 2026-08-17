@@ -55,7 +55,7 @@ export default function LoadingSpinner({
         <div className="flex items-center justify-center gap-1.5">
           <Sparkles className="w-4 h-4 text-amber-500 animate-spin" />
           <h3 className="text-sm font-black tracking-wider uppercase text-zinc-900 dark:text-white">
-            Shaswat Ecom
+            Manoj Traders
           </h3>
         </div>
 

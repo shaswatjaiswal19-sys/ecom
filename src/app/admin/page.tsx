@@ -124,7 +124,7 @@ export default function AdminDashboard() {
         <div>
           <h1 className="text-3xl font-black text-zinc-900 dark:text-white">Admin Dashboard</h1>
           <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1">
-            Overview of Shaswat Ecom — {new Date().toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+            Overview of Manoj Traders — {new Date().toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
           </p>
         </div>
         <div className="flex items-center gap-3">
