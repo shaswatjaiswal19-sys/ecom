@@ -18,13 +18,14 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | undefined>(
     product?.variants?.[0]
   );
-  const [selectedImage, setSelectedImage] = useState<string>(product?.images[0] || "");
+  const defaultPlaceholder = "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=400";
+  const [selectedImage, setSelectedImage] = useState<string>(product?.images?.[0] || defaultPlaceholder);
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
     if (product) {
       setSelectedVariant(product.variants?.[0]);
-      setSelectedImage(product.images?.[0] || "");
+      setSelectedImage(product.images?.[0] || defaultPlaceholder);
       setQuantity(1);
     }
   }, [product]);
@@ -49,14 +50,14 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
         <div className="p-6 bg-zinc-50 dark:bg-zinc-950 flex flex-col items-center justify-center">
           <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 mb-4">
             <Image
-              src={selectedImage || product.images[0]}
-              alt={product.name}
+              src={selectedImage || product.images?.[0] || defaultPlaceholder}
+              alt={product.name || "Product"}
               fill
               className="object-contain p-6"
             />
           </div>
           <div className="flex gap-2">
-            {product.images.map((img, idx) => (
+            {(product.images || []).map((img, idx) => (
               <button
                 key={idx}
                 onClick={() => setSelectedImage(img)}

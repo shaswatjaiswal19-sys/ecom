@@ -89,10 +89,10 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
       </div>
 
       {/* Image Thumbnail Container */}
-      <Link href={`/shop/${product.slug}`} prefetch={true} className="block relative aspect-square p-6 overflow-hidden">
+      <Link href={`/shop/${product.slug || product.id}`} prefetch={true} className="block relative aspect-square p-6 overflow-hidden">
         <Image
-          src={product.images[0]}
-          alt={product.name}
+          src={product.images?.[0] || "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=400"}
+          alt={product.name || "Product"}
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
           className="object-contain p-6 group-hover:scale-105 transition-transform duration-500 ease-out"
