@@ -268,23 +268,15 @@ interface CategoryState {
   resetCategories: () => void;
 }
 
-const DEFAULT_MOCK_CAT_IDS = new Set([
-  "cat-fruits-veg",
-  "cat-dairy-bakery",
-  "cat-staples-grains",
-  "cat-spices-oils",
-]);
-
 export const useCategoryStore = create<CategoryState>()(
   persist(
     (set) => ({
       categories: [],
       setCategories: (categories) =>
         set({
-          categories: (categories || []).filter((c) => !DEFAULT_MOCK_CAT_IDS.has(c.id)),
+          categories: Array.isArray(categories) ? categories : [],
         }),
       addCategory: (newCat) => {
-        if (DEFAULT_MOCK_CAT_IDS.has(newCat.id)) return;
         set((state) => ({
           categories: [newCat, ...state.categories.filter((c) => c.id !== newCat.id)],
         }));
@@ -304,9 +296,6 @@ export const useCategoryStore = create<CategoryState>()(
     {
       name: "manoj-traders-categories-v3",
       storage: createJSONStorage(() => safeLocalStorage),
-      partialize: (state) => ({
-        categories: state.categories.filter((c) => !DEFAULT_MOCK_CAT_IDS.has(c.id)),
-      }),
     }
   )
 );
@@ -314,7 +303,9 @@ export const useCategoryStore = create<CategoryState>()(
 // Persistent Brands Store
 interface BrandState {
   brands: Brand[];
+  setBrands: (brands: Brand[]) => void;
   addBrand: (brand: Brand) => void;
+  updateBrand: (id: string, updated: Brand) => void;
   deleteBrand: (id: string) => void;
   resetBrands: () => void;
 }
@@ -323,6 +314,10 @@ export const useBrandStore = create<BrandState>()(
   persist(
     (set) => ({
       brands: MOCK_BRANDS,
+      setBrands: (brands) =>
+        set({
+          brands: Array.isArray(brands) && brands.length > 0 ? brands : MOCK_BRANDS,
+        }),
       addBrand: (newBrand) => {
         const existingIdx = MOCK_BRANDS.findIndex((b) => b.id === newBrand.id);
         if (existingIdx === -1) {
@@ -332,6 +327,11 @@ export const useBrandStore = create<BrandState>()(
         }
         set((state) => ({
           brands: [newBrand, ...state.brands.filter((b) => b.id !== newBrand.id)],
+        }));
+      },
+      updateBrand: (id, updated) => {
+        set((state) => ({
+          brands: state.brands.map((b) => (b.id === id ? updated : b)),
         }));
       },
       deleteBrand: (id) => {

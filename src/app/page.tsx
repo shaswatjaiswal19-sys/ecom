@@ -15,7 +15,7 @@ import QuickViewModal from "@/components/shop/QuickViewModal";
 import CountdownTimer from "@/components/shop/CountdownTimer";
 import { MOCK_BRANDS } from "@/lib/mockData";
 import { useProductStore, useCategoryStore } from "@/lib/store";
-import { getProductsFromStore } from "@/lib/firestore";
+import { getProductsFromStore, getCategoriesFromStore } from "@/lib/firestore";
 import { formatCurrency } from "@/lib/utils";
 import { Product } from "@/types";
 
@@ -78,11 +78,19 @@ export default function HomePage() {
     fetch("/api/categories", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
-        if (data.success && Array.isArray(data.categories)) {
+        if (data.success && Array.isArray(data.categories) && data.categories.length > 0) {
           storeSetCategories(data.categories);
+        } else {
+          getCategoriesFromStore().then((liveCats) => {
+            if (liveCats && liveCats.length > 0) storeSetCategories(liveCats);
+          }).catch(() => {});
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        getCategoriesFromStore().then((liveCats) => {
+          if (liveCats && liveCats.length > 0) storeSetCategories(liveCats);
+        }).catch(() => {});
+      });
   }, [setProducts, storeSetCategories]);
 
   // Global Page Scroll Animation Hooks (SSR-Safe)

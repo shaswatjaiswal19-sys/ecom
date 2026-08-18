@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   getCategoriesFromStore,
   createCategoryInFirestore,
+  updateCategoryInFirestore,
   deleteCategoryInFirestore,
   getBrandsFromStore,
   createBrandInFirestore,
@@ -57,6 +58,31 @@ export async function POST(request: Request) {
   } catch (error: any) {
     return NextResponse.json(
       { success: false, error: error.message || "Failed to create category" },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT /api/categories - Update an existing category (Admin Only)
+export async function PUT(request: Request) {
+  try {
+    const authGuard = await requireServerAdmin();
+    if (!authGuard.authorized) {
+      return authGuard.response!;
+    }
+
+    const body = await request.json();
+    const { id, ...updates } = body;
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: "ID is required" }, { status: 400 });
+    }
+
+    await updateCategoryInFirestore(id, updates);
+    return NextResponse.json({ success: true, message: "Category updated successfully" });
+  } catch (error: any) {
+    return NextResponse.json(
+      { success: false, error: error.message || "Failed to update category" },
       { status: 500 }
     );
   }

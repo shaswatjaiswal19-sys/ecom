@@ -6,7 +6,7 @@ import ProductCard from "@/components/shop/ProductCard";
 import QuickViewModal from "@/components/shop/QuickViewModal";
 import { MOCK_BRANDS } from "@/lib/mockData";
 import { useProductStore, useCategoryStore, useBrandStore } from "@/lib/store";
-import { getProductsFromStore } from "@/lib/firestore";
+import { getProductsFromStore, getCategoriesFromStore } from "@/lib/firestore";
 import { Product } from "@/types";
 import { Search, SlidersHorizontal, Grid3X3, List, X, ChevronDown, Sparkles } from "lucide-react";
 
@@ -45,11 +45,19 @@ function ShopContent() {
     fetch("/api/categories", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
-        if (data.success && Array.isArray(data.categories)) {
+        if (data.success && Array.isArray(data.categories) && data.categories.length > 0) {
           storeSetCategories(data.categories);
+        } else {
+          getCategoriesFromStore().then((liveCats) => {
+            if (liveCats && liveCats.length > 0) storeSetCategories(liveCats);
+          }).catch(() => {});
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        getCategoriesFromStore().then((liveCats) => {
+          if (liveCats && liveCats.length > 0) storeSetCategories(liveCats);
+        }).catch(() => {});
+      });
   }, [setProducts, storeSetCategories]);
   const categoriesList = storeCategories;
   const brandsList = storeBrands.length ? storeBrands : MOCK_BRANDS;

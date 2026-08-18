@@ -71,13 +71,13 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
   return found || null;
 }
 
-// Categories Firestore API - Instant response
+// Categories Firestore API - Instant response & Persistent Firestore saving
 export async function getCategoriesFromStore(): Promise<Category[]> {
   try {
     const querySnapshot = await getDocs(collection(db, "categories"));
     const categories: Category[] = [];
-    querySnapshot.forEach((doc) => {
-      categories.push({ id: doc.id, ...doc.data() } as Category);
+    querySnapshot.forEach((docSnap) => {
+      categories.push({ id: docSnap.id, ...docSnap.data() } as Category);
     });
     return categories;
   } catch (err) {
@@ -111,10 +111,33 @@ export async function createCategoryInFirestore(catData: Partial<Category>): Pro
   } catch {}
 
   const sanitizedDoc = sanitizeForFirestore(newCat);
-  if (!isMockFirebase) {
-    addDoc(collection(db, "categories"), sanitizedDoc).catch(() => {});
+  try {
+    await setDoc(doc(db, "categories", newCat.id), sanitizedDoc);
+  } catch (err) {
+    console.error("Firestore createCategoryInFirestore error:", err);
   }
   return newCat;
+}
+
+export async function updateCategoryInFirestore(id: string, updates: Partial<Category>): Promise<boolean> {
+  const index = MOCK_CATEGORIES.findIndex((c) => c.id === id);
+  if (index !== -1) {
+    MOCK_CATEGORIES[index] = { ...MOCK_CATEGORIES[index], ...updates };
+  }
+  try {
+    const { useCategoryStore } = require("./store");
+    const existing = useCategoryStore.getState().categories.find((c: Category) => c.id === id);
+    if (existing) {
+      useCategoryStore.getState().updateCategory(id, { ...existing, ...updates });
+    }
+  } catch {}
+
+  try {
+    await setDoc(doc(db, "categories", id), sanitizeForFirestore(updates), { merge: true });
+  } catch (err) {
+    console.error("Firestore updateCategoryInFirestore error:", err);
+  }
+  return true;
 }
 
 export async function deleteCategoryInFirestore(id: string): Promise<boolean> {
@@ -126,20 +149,29 @@ export async function deleteCategoryInFirestore(id: string): Promise<boolean> {
     const { useCategoryStore } = require("./store");
     useCategoryStore.getState().deleteCategory(id);
   } catch {}
+
+  try {
+    await deleteDoc(doc(db, "categories", id));
+  } catch (err) {
+    console.error("Firestore deleteCategoryInFirestore error:", err);
+  }
   return true;
 }
 
-// Brands Firestore API - Instant 0ms response
+// Brands Firestore API - Instant response & Persistent Firestore saving
 export async function getBrandsFromStore(): Promise<Brand[]> {
-  return fetchWithInstantFallback(async () => {
+  try {
     const querySnapshot = await getDocs(collection(db, "brands"));
-    if (querySnapshot.empty) return MOCK_BRANDS;
     const brands: Brand[] = [];
-    querySnapshot.forEach((doc) => {
-      brands.push({ id: doc.id, ...doc.data() } as Brand);
+    querySnapshot.forEach((docSnap) => {
+      brands.push({ id: docSnap.id, ...docSnap.data() } as Brand);
     });
-    return brands.length ? brands : MOCK_BRANDS;
-  }, MOCK_BRANDS);
+    if (brands.length > 0) return brands;
+    return MOCK_BRANDS;
+  } catch (err) {
+    console.error("Firestore getBrandsFromStore error:", err);
+    return MOCK_BRANDS;
+  }
 }
 
 export async function createBrandInFirestore(brandData: Partial<Brand>): Promise<Brand> {
@@ -164,8 +196,10 @@ export async function createBrandInFirestore(brandData: Partial<Brand>): Promise
   } catch {}
 
   const sanitizedDoc = sanitizeForFirestore(newBrand);
-  if (!isMockFirebase) {
-    addDoc(collection(db, "brands"), sanitizedDoc).catch(() => {});
+  try {
+    await setDoc(doc(db, "brands", newBrand.id), sanitizedDoc);
+  } catch (err) {
+    console.error("Firestore createBrandInFirestore error:", err);
   }
   return newBrand;
 }
@@ -179,6 +213,12 @@ export async function deleteBrandInFirestore(id: string): Promise<boolean> {
     const { useBrandStore } = require("./store");
     useBrandStore.getState().deleteBrand(id);
   } catch {}
+
+  try {
+    await deleteDoc(doc(db, "brands", id));
+  } catch (err) {
+    console.error("Firestore deleteBrandInFirestore error:", err);
+  }
   return true;
 }
 

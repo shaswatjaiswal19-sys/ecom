@@ -1,8 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useCategoryStore, useBrandStore, useProductStore } from "@/lib/store";
 import { Category, Brand } from "@/types";
+import { db } from "@/lib/firebase";
+import { collection, onSnapshot } from "firebase/firestore";
+import {
+  getCategoriesFromStore,
+  createCategoryInFirestore,
+  deleteCategoryInFirestore,
+  getBrandsFromStore,
+  createBrandInFirestore,
+  deleteBrandInFirestore,
+} from "@/lib/firestore";
 import {
   Plus,
   Trash2,
@@ -17,6 +27,7 @@ import {
   Leaf,
   LayoutList,
   LayoutGrid,
+  RefreshCw,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -33,19 +44,100 @@ const ICON_OPTIONS = [
 
 export default function AdminCategoriesPage() {
   const { categories, setCategories, addCategory, deleteCategory } = useCategoryStore();
-  const { brands, addBrand, deleteBrand } = useBrandStore();
+  const { brands, setBrands, addBrand, deleteBrand } = useBrandStore();
   const { products } = useProductStore();
 
-  useEffect(() => {
-    fetch("/api/categories", { cache: "no-store" })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && Array.isArray(data.categories)) {
-          setCategories(data.categories);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchCategoriesAndBrands = useCallback(async (showToast = false) => {
+    setIsRefreshing(true);
+    try {
+      // 1. Fetch Categories
+      try {
+        const catRes = await fetch("/api/categories", { cache: "no-store" });
+        const catData = await catRes.json();
+        if (catData.success && Array.isArray(catData.categories) && catData.categories.length > 0) {
+          setCategories(catData.categories);
+        } else {
+          const liveCats = await getCategoriesFromStore();
+          if (liveCats && liveCats.length > 0) {
+            setCategories(liveCats);
+          }
         }
-      })
-      .catch(() => {});
-  }, [setCategories]);
+      } catch {
+        const liveCats = await getCategoriesFromStore();
+        if (liveCats && liveCats.length > 0) {
+          setCategories(liveCats);
+        }
+      }
+
+      // 2. Fetch Brands
+      try {
+        const brandRes = await fetch("/api/categories?type=brands", { cache: "no-store" });
+        const brandData = await brandRes.json();
+        if (brandData.success && Array.isArray(brandData.brands) && brandData.brands.length > 0) {
+          setBrands(brandData.brands);
+        } else {
+          const liveBrands = await getBrandsFromStore();
+          if (liveBrands && liveBrands.length > 0) {
+            setBrands(liveBrands);
+          }
+        }
+      } catch {
+        const liveBrands = await getBrandsFromStore();
+        if (liveBrands && liveBrands.length > 0) {
+          setBrands(liveBrands);
+        }
+      }
+
+      if (showToast) toast.success("Synced categories and brands with database!");
+    } catch (err) {
+      console.error("Failed to fetch categories/brands:", err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [setCategories, setBrands]);
+
+  useEffect(() => {
+    fetchCategoriesAndBrands();
+
+    // Set up real-time listener for Firestore categories
+    let unsubscribeCats: () => void = () => {};
+    let unsubscribeBrands: () => void = () => {};
+
+    try {
+      unsubscribeCats = onSnapshot(collection(db, "categories"), (snapshot) => {
+        const liveCats: Category[] = [];
+        snapshot.forEach((docSnap) => {
+          liveCats.push({ id: docSnap.id, ...docSnap.data() } as Category);
+        });
+        if (liveCats.length > 0) {
+          setCategories(liveCats);
+        }
+      });
+    } catch (err) {
+      console.error("Firestore onSnapshot categories error:", err);
+    }
+
+    try {
+      unsubscribeBrands = onSnapshot(collection(db, "brands"), (snapshot) => {
+        const liveBrands: Brand[] = [];
+        snapshot.forEach((docSnap) => {
+          liveBrands.push({ id: docSnap.id, ...docSnap.data() } as Brand);
+        });
+        if (liveBrands.length > 0) {
+          setBrands(liveBrands);
+        }
+      });
+    } catch (err) {
+      console.error("Firestore onSnapshot brands error:", err);
+    }
+
+    return () => {
+      unsubscribeCats();
+      unsubscribeBrands();
+    };
+  }, [fetchCategoriesAndBrands, setCategories, setBrands]);
 
   const [activeTab, setActiveTab] = useState<"categories" | "brands">("categories");
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
@@ -62,7 +154,7 @@ export default function AdminCategoriesPage() {
   const [newBrandLogo, setNewBrandLogo] = useState("");
 
   // Add Category Handler
-  const handleAddCategory = (e: React.FormEvent) => {
+  const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCatName.trim()) {
       toast.error("Please enter a category name");
@@ -82,9 +174,13 @@ export default function AdminCategoriesPage() {
       featured: true,
     };
 
+    // 1. Immediate local store update
     addCategory(created);
 
-    // Sync in background with API
+    // 2. Direct Firestore persistent save
+    await createCategoryInFirestore(created);
+
+    // 3. Sync with Server API
     fetch("/api/categories", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -98,16 +194,17 @@ export default function AdminCategoriesPage() {
   };
 
   // Delete Category Handler
-  const handleDeleteCategory = (cat: Category) => {
+  const handleDeleteCategory = async (cat: Category) => {
     if (confirm(`Are you sure you want to delete category "${cat.name}"?`)) {
       deleteCategory(cat.id);
+      await deleteCategoryInFirestore(cat.id);
       fetch(`/api/categories?id=${cat.id}`, { method: "DELETE" }).catch(() => {});
       toast.success(`Category "${cat.name}" removed from catalog`);
     }
   };
 
   // Add Brand Handler
-  const handleAddBrand = (e: React.FormEvent) => {
+  const handleAddBrand = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newBrandName.trim()) {
       toast.error("Please enter a brand name");
@@ -124,9 +221,13 @@ export default function AdminCategoriesPage() {
       featured: true,
     };
 
+    // 1. Immediate local store update
     addBrand(created);
 
-    // Sync in background with API
+    // 2. Direct Firestore persistent save
+    await createBrandInFirestore(created);
+
+    // 3. Sync with Server API
     fetch("/api/categories", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -140,9 +241,10 @@ export default function AdminCategoriesPage() {
   };
 
   // Delete Brand Handler
-  const handleDeleteBrand = (brand: Brand) => {
+  const handleDeleteBrand = async (brand: Brand) => {
     if (confirm(`Are you sure you want to delete brand "${brand.name}"?`)) {
       deleteBrand(brand.id);
+      await deleteBrandInFirestore(brand.id);
       fetch(`/api/categories?id=${brand.id}&type=brand`, { method: "DELETE" }).catch(() => {});
       toast.success(`Brand "${brand.name}" removed from registry`);
     }
@@ -158,6 +260,15 @@ export default function AdminCategoriesPage() {
             Manage your store collections, organic departments, and certified partner brands.
           </p>
         </div>
+
+        <button
+          onClick={() => fetchCategoriesAndBrands(true)}
+          disabled={isRefreshing}
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-xs font-bold text-zinc-700 dark:text-zinc-200 transition-all border border-zinc-200 dark:border-zinc-700 disabled:opacity-50"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-amber-500" : ""}`} />
+          <span>{isRefreshing ? "Syncing..." : "Sync Database"}</span>
+        </button>
       </div>
 
       {/* Tabs & View Switcher */}
