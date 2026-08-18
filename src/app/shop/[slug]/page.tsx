@@ -225,9 +225,13 @@ function ProductDetailContent({ slug }: { slug: string }) {
               </p>
               <div className="flex flex-wrap items-center gap-3 mt-2">
                 <div className="flex items-center gap-1.5">
-                  <span className={`w-2 h-2 rounded-full ${product.inStock ? "bg-emerald-500" : "bg-rose-500"} animate-pulse`} />
-                  <span className={`text-xs font-bold ${product.inStock ? "text-emerald-500" : "text-rose-500"}`}>
-                    {product.inStock ? `In Stock (${product.stock} ${product.unit || "kg"} available)` : "Out of Stock"}
+                  <span className={`w-2 h-2 rounded-full ${selectedWeight ? (Number(selectedWeight.stock ?? 0) > 0 ? "bg-emerald-500" : "bg-rose-500") : (product.inStock ? "bg-emerald-500" : "bg-rose-500")} animate-pulse`} />
+                  <span className={`text-xs font-bold ${selectedWeight ? (Number(selectedWeight.stock ?? 0) > 0 ? "text-emerald-500" : "text-rose-500") : (product.inStock ? "text-emerald-500" : "text-rose-500")}`}>
+                    {selectedWeight
+                      ? (Number(selectedWeight.stock ?? 0) > 0
+                          ? `In Stock (${Number(selectedWeight.stock)} units available for ${selectedWeight.weight})`
+                          : `Out of Stock for ${selectedWeight.weight}`)
+                      : (product.inStock ? `In Stock (${product.stock} ${product.unit || "kg"} available)` : "Out of Stock")}
                   </span>
                 </div>
                 {product.weight && (
@@ -247,23 +251,30 @@ function ProductDetailContent({ slug }: { slug: string }) {
                     Select Pack Size / Weight:
                   </label>
                   {selectedWeight && (
-                    <span className="text-xs font-bold text-amber-600 dark:text-amber-400">
-                      {selectedWeight.weight}
+                    <span className={`text-xs font-bold ${Number(selectedWeight.stock ?? 0) > 0 ? "text-amber-600 dark:text-amber-400" : "text-rose-500"}`}>
+                      {selectedWeight.weight} ({Number(selectedWeight.stock ?? 0) > 0 ? `${selectedWeight.stock} available` : "0 stock"})
                     </span>
                   )}
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                   {product.weightOptions.map((opt) => {
                     const isSelected = selectedWeight?.id === opt.id || selectedWeight?.weight === opt.weight;
+                    const optStock = Number(opt.stock ?? 0);
+                    const optInStock = optStock > 0;
                     return (
                       <button
                         key={opt.id}
                         type="button"
-                        onClick={() => setSelectedWeight(opt)}
+                        onClick={() => {
+                          setSelectedWeight(opt);
+                          setQuantity(1);
+                        }}
                         className={`relative p-3 rounded-2xl text-left border-2 transition-all flex flex-col justify-between ${
                           isSelected
                             ? "border-amber-500 bg-amber-500/10 text-amber-900 dark:text-amber-200 shadow-md ring-2 ring-amber-500/20 scale-[1.02]"
-                            : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 bg-zinc-50/50 dark:bg-zinc-900/50 text-zinc-700 dark:text-zinc-300"
+                            : optInStock
+                            ? "border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 bg-zinc-50/50 dark:bg-zinc-900/50 text-zinc-700 dark:text-zinc-300"
+                            : "border-rose-500/30 bg-rose-500/5 text-zinc-400 dark:text-zinc-500 opacity-80"
                         }`}
                       >
                         <div className="flex items-center justify-between gap-1">
@@ -272,15 +283,20 @@ function ProductDetailContent({ slug }: { slug: string }) {
                             <CheckCircle2 className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
                           )}
                         </div>
-                        <div className="mt-1.5 flex items-baseline gap-1.5">
-                          <span className="text-xs font-black text-zinc-900 dark:text-white">
-                            {formatCurrency(opt.price)}
-                          </span>
-                          {opt.mrp && opt.mrp > opt.price && (
-                            <span className="text-[10px] text-zinc-400 line-through">
-                              {formatCurrency(opt.mrp)}
+                        <div className="mt-1.5 flex items-baseline justify-between gap-1">
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-xs font-black text-zinc-900 dark:text-white">
+                              {formatCurrency(opt.price)}
                             </span>
-                          )}
+                            {opt.mrp && opt.mrp > opt.price && (
+                              <span className="text-[10px] text-zinc-400 line-through">
+                                {formatCurrency(opt.mrp)}
+                              </span>
+                            )}
+                          </div>
+                          <span className={`text-[10px] font-bold ${optInStock ? (optStock <= 10 ? "text-amber-500" : "text-emerald-600 dark:text-emerald-400") : "text-rose-500 font-extrabold"}`}>
+                            {optInStock ? `${optStock} left` : "0 stock"}
+                          </span>
                         </div>
                       </button>
                     );
@@ -323,51 +339,70 @@ function ProductDetailContent({ slug }: { slug: string }) {
             )}
 
             {/* Quantity Selector */}
-            <div className="flex items-center gap-4">
-              <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">Qty:</label>
-              <div className="flex items-center gap-2 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-2 bg-white dark:bg-zinc-900">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="text-zinc-500 hover:text-black dark:hover:text-white transition-colors font-bold text-lg w-5"
-                >
-                  −
-                </button>
-                <span className="font-black text-zinc-900 dark:text-white w-8 text-center tabular-nums">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                  className="text-zinc-500 hover:text-black dark:hover:text-white transition-colors font-bold text-lg w-5"
-                >
-                  +
-                </button>
-              </div>
-            </div>
+            {(() => {
+              const currentWeightStock = selectedWeight
+                ? Number(selectedWeight.stock ?? 0)
+                : Number(product.stock ?? 0);
+              const isWeightInStock = currentWeightStock > 0;
 
-            {/* CTA Buttons */}
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  addToCart(product, quantity, selectedVariant, selectedWeight);
-                  toast.success(`Added ${quantity} × ${product.name} ${selectedWeight ? `(${selectedWeight.weight})` : ""} to Cart! 🎉`);
-                }}
-                disabled={!product.inStock}
-                className="flex-1 py-4 rounded-2xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 font-bold text-sm hover:bg-amber-500 hover:text-black dark:hover:bg-amber-400 dark:hover:text-black transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <ShoppingBag className="w-5 h-5" /> Add to Cart • {formatCurrency(currentPrice * quantity)}
-              </button>
-              <button
-                onClick={() => {
-                  toggleWishlist(product);
-                  toast.success(isWishlisted ? "Removed from Wishlist" : "Saved to Wishlist ❤️");
-                }}
-                className={`p-4 rounded-2xl border-2 transition-all ${
-                  isWishlisted
-                    ? "border-rose-500 bg-rose-500/10 text-rose-500"
-                    : "border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-rose-500 hover:text-rose-500"
-                }`}
-                title="Add to Wishlist"
-              >
-                <Heart className={`w-5 h-5 ${isWishlisted ? "fill-rose-500" : ""}`} />
-              </button>
+              return (
+                <>
+                  <div className="flex items-center gap-4">
+                    <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">Qty:</label>
+                    <div className="flex items-center gap-2 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-2 bg-white dark:bg-zinc-900">
+                      <button
+                        disabled={quantity <= 1 || !isWeightInStock}
+                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        className="text-zinc-500 hover:text-black dark:hover:text-white transition-colors font-bold text-lg w-5 disabled:opacity-40"
+                      >
+                        −
+                      </button>
+                      <span className="font-black text-zinc-900 dark:text-white w-8 text-center tabular-nums">
+                        {isWeightInStock ? quantity : 0}
+                      </span>
+                      <button
+                        disabled={quantity >= currentWeightStock || !isWeightInStock}
+                        onClick={() => setQuantity(Math.min(currentWeightStock, quantity + 1))}
+                        className="text-zinc-500 hover:text-black dark:hover:text-white transition-colors font-bold text-lg w-5 disabled:opacity-40"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* CTA Buttons */}
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => {
+                        addToCart(product, quantity, selectedVariant, selectedWeight);
+                        toast.success(`Added ${quantity} × ${product.name} ${selectedWeight ? `(${selectedWeight.weight})` : ""} to Cart! 🎉`);
+                      }}
+                      disabled={!isWeightInStock || currentWeightStock <= 0}
+                      className="flex-1 py-4 rounded-2xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 font-bold text-sm hover:bg-amber-500 hover:text-black dark:hover:bg-amber-400 dark:hover:text-black transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <ShoppingBag className="w-5 h-5" />
+                      {isWeightInStock
+                        ? `Add to Cart • ${formatCurrency(currentPrice * quantity)}`
+                        : `Out of Stock for ${selectedWeight?.weight || "this weight"}`}
+                    </button>
+                    <button
+                      onClick={() => {
+                        toggleWishlist(product);
+                        toast.success(isWishlisted ? "Removed from Wishlist" : "Saved to Wishlist ❤️");
+                      }}
+                      className={`p-4 rounded-2xl border-2 transition-all ${
+                        isWishlisted
+                          ? "border-rose-500 bg-rose-500/10 text-rose-500"
+                          : "border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-rose-500 hover:text-rose-500"
+                      }`}
+                      title="Add to Wishlist"
+                    >
+                      <Heart className={`w-5 h-5 ${isWishlisted ? "fill-rose-500" : ""}`} />
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(window.location.href);

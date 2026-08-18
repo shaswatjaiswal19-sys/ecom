@@ -2,6 +2,7 @@ import { db, isMockFirebase } from "./firebase";
 import {
   collection,
   getDocs,
+  getDoc,
   addDoc,
   setDoc,
   doc,
@@ -11,7 +12,7 @@ import {
   where,
   orderBy
 } from "firebase/firestore";
-import { Product, Category, Brand, Order, Coupon, Banner, AnalyticsSummary } from "@/types";
+import { Product, Category, Brand, Order, OrderItem, Coupon, Banner, AnalyticsSummary } from "@/types";
 import { MOCK_PRODUCTS, MOCK_CATEGORIES, MOCK_BRANDS, MOCK_ORDERS, MOCK_BANNERS, MOCK_ANALYTICS } from "./mockData";
 
 // Helper function to sanitize objects for Firestore (converts undefined values to null or removes them)
@@ -235,9 +236,121 @@ export async function getBannersFromStore(): Promise<Banner[]> {
   }, MOCK_BANNERS);
 }
 
-// Orders Firestore API - Guaranteed Persistence
+// Stock Deduction Engine for Weight-Specific Inventory
+export async function deductProductStock(items: OrderItem[]): Promise<void> {
+  // Step 1: Pre-validate stock for all items before any deduction
+  for (const item of items) {
+    let product: Product | undefined;
+    try {
+      const { useProductStore } = require("./store");
+      product = useProductStore.getState().products.find((p: Product) => p.id === item.productId);
+    } catch {}
+    if (!product) {
+      product = MOCK_PRODUCTS.find((p) => p.id === item.productId);
+    }
+    if (!product) {
+      try {
+        const snap = await getDoc(doc(db, "products", item.productId));
+        if (snap.exists()) {
+          product = { id: snap.id, ...snap.data() } as Product;
+        }
+      } catch {}
+    }
+
+    if (product) {
+      if (item.selectedWeight && product.weightOptions && product.weightOptions.length > 0) {
+        const weightOpt = product.weightOptions.find(
+          (w) => w.weight === item.selectedWeight || w.id === item.selectedWeightId || w.id === item.selectedWeight
+        );
+        if (weightOpt) {
+          const availStock = Number(weightOpt.stock ?? 0);
+          if (availStock < item.quantity) {
+            throw new Error(`Insufficient stock for "${product.name}" (${weightOpt.weight}). Available: ${availStock}, requested: ${item.quantity}.`);
+          }
+        } else if (Number(product.stock ?? 0) < item.quantity) {
+          throw new Error(`Insufficient stock for "${product.name}". Available: ${product.stock}, requested: ${item.quantity}.`);
+        }
+      } else if (Number(product.stock ?? 0) < item.quantity) {
+        throw new Error(`Insufficient stock for "${product.name}". Available: ${product.stock}, requested: ${item.quantity}.`);
+      }
+    }
+  }
+
+  // Step 2: All items have sufficient stock -> perform exact weight stock deductions
+  for (const item of items) {
+    let product: Product | undefined;
+    try {
+      const { useProductStore } = require("./store");
+      product = useProductStore.getState().products.find((p: Product) => p.id === item.productId);
+    } catch {}
+    if (!product) {
+      product = MOCK_PRODUCTS.find((p) => p.id === item.productId);
+    }
+    if (!product) {
+      try {
+        const snap = await getDoc(doc(db, "products", item.productId));
+        if (snap.exists()) {
+          product = { id: snap.id, ...snap.data() } as Product;
+        }
+      } catch {}
+    }
+
+    if (product) {
+      let updatedWeightOptions = product.weightOptions ? [...product.weightOptions] : undefined;
+      let newStock = Number(product.stock || 0);
+
+      if (item.selectedWeight && updatedWeightOptions && updatedWeightOptions.length > 0) {
+        const weightIdx = updatedWeightOptions.findIndex(
+          (w) => w.weight === item.selectedWeight || w.id === item.selectedWeightId || w.id === item.selectedWeight
+        );
+        if (weightIdx !== -1) {
+          const currentWeightStock = Number(updatedWeightOptions[weightIdx].stock ?? 0);
+          updatedWeightOptions[weightIdx] = {
+            ...updatedWeightOptions[weightIdx],
+            stock: Math.max(0, currentWeightStock - item.quantity),
+          };
+          // Recalculate total product stock as sum of all weight variant stocks
+          newStock = updatedWeightOptions.reduce((sum, w) => sum + Number(w.stock || 0), 0);
+        } else {
+          newStock = Math.max(0, Number(product.stock || 0) - item.quantity);
+        }
+      } else {
+        newStock = Math.max(0, Number(product.stock || 0) - item.quantity);
+      }
+
+      const updatedProduct: Product = {
+        ...product,
+        weightOptions: updatedWeightOptions,
+        stock: newStock,
+        inStock: newStock > 0,
+        updatedAt: new Date().toISOString(),
+      };
+
+      // 1. Update in-memory MOCK_PRODUCTS
+      const mockIdx = MOCK_PRODUCTS.findIndex((p) => p.id === product!.id);
+      if (mockIdx !== -1) {
+        MOCK_PRODUCTS[mockIdx] = updatedProduct;
+      }
+
+      // 2. Update Zustand store
+      try {
+        const { useProductStore } = require("./store");
+        useProductStore.getState().updateProduct(product.id, updatedProduct);
+      } catch {}
+
+      // 3. Persist updated product to Firestore
+      try {
+        await setDoc(doc(db, "products", product.id), sanitizeForFirestore(updatedProduct), { merge: true });
+      } catch (err) {
+        console.error("Firestore product stock deduction error:", err);
+      }
+    }
+  }
+}
+
+// Orders Firestore API - Guaranteed Persistence & Stock Deduction
 export async function createOrderInStore(orderData: Partial<Order>): Promise<Order> {
-  const sanitizedItems = (orderData.items || []).map((item) => ({
+  const sanitizedItems: OrderItem[] = (orderData.items || []).map((item) => ({
     productId: item.productId || "",
     name: item.name || "Grocery Product",
     image: item.image || "",
@@ -245,7 +358,11 @@ export async function createOrderInStore(orderData: Partial<Order>): Promise<Ord
     quantity: item.quantity || 1,
     variantName: item.variantName || undefined,
     selectedWeight: item.selectedWeight || undefined,
+    selectedWeightId: item.selectedWeightId || undefined,
   }));
+
+  // Deduct stock for each item based on exact selected weight variant
+  await deductProductStock(sanitizedItems);
 
   const orderId = orderData.id || `ord-${Date.now()}`;
   const newOrder: Order = {
@@ -327,6 +444,19 @@ export async function getOrdersFromStore(): Promise<Order[]> {
 
 // Create, Update, Delete Product Firestore API - Guaranteed Persistence
 export async function createProductInFirestore(productData: Partial<Product>): Promise<Product> {
+  const sanitizedWeightOptions = (productData.weightOptions || []).map((opt) => ({
+    id: opt.id || `wt-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+    weight: opt.weight || "1 kg",
+    price: Number(opt.price || 0),
+    mrp: opt.mrp !== undefined ? Number(opt.mrp) : undefined,
+    stock: Number(opt.stock ?? 0),
+    sku: opt.sku || undefined,
+  }));
+
+  const computedStock = sanitizedWeightOptions.length > 0
+    ? sanitizedWeightOptions.reduce((sum, opt) => sum + Number(opt.stock || 0), 0)
+    : Number(productData.stock || 0);
+
   const newProduct: Product = {
     id: productData.id || `prod-${Date.now()}`,
     name: productData.name || "Grocery Product",
@@ -344,10 +474,11 @@ export async function createProductInFirestore(productData: Partial<Product>): P
     brand: productData.brand || "Manoj Organics",
     sku: productData.sku || `SKU-MT-${Math.floor(1000 + Math.random() * 9000)}`,
     barcode: productData.barcode || `890${Math.floor(1000000000 + Math.random() * 9000000000)}`,
-    stock: Number(productData.stock || 0),
+    stock: computedStock,
     unit: productData.unit || "kg",
-    inStock: (productData.stock || 0) > 0,
+    inStock: computedStock > 0,
     weight: productData.weight || "1 kg",
+    weightOptions: sanitizedWeightOptions.length > 0 ? sanitizedWeightOptions : undefined,
     dimensions: productData.dimensions || "15x10x20 cm",
     images: productData.images?.length ? productData.images : ["https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&q=80&w=800"],
     specifications: productData.specifications || [],
@@ -384,6 +515,23 @@ export async function createProductInFirestore(productData: Partial<Product>): P
 }
 
 export async function updateProductInFirestore(id: string, updates: Partial<Product>): Promise<boolean> {
+  if (updates.weightOptions) {
+    updates.weightOptions = updates.weightOptions.map((opt) => ({
+      id: opt.id || `wt-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+      weight: opt.weight || "1 kg",
+      price: Number(opt.price || 0),
+      mrp: opt.mrp !== undefined ? Number(opt.mrp) : undefined,
+      stock: Number(opt.stock ?? 0),
+      sku: opt.sku || undefined,
+    }));
+    const computedStock = updates.weightOptions.reduce((sum, opt) => sum + Number(opt.stock || 0), 0);
+    updates.stock = computedStock;
+    updates.inStock = computedStock > 0;
+  } else if (updates.stock !== undefined) {
+    updates.stock = Number(updates.stock);
+    updates.inStock = updates.stock > 0;
+  }
+
   const index = MOCK_PRODUCTS.findIndex((p) => p.id === id);
   if (index !== -1) {
     MOCK_PRODUCTS[index] = { ...MOCK_PRODUCTS[index], ...updates };

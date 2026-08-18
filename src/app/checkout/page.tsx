@@ -120,6 +120,7 @@ export default function CheckoutPage() {
           quantity: item.quantity,
           variantName: item.selectedVariant?.name,
           selectedWeight: item.selectedWeight?.weight,
+          selectedWeightId: item.selectedWeight?.id,
         })),
         shippingAddress,
         billingAddress: shippingAddress,
@@ -134,7 +135,7 @@ export default function CheckoutPage() {
       };
 
       // 1. Create order on backend API & Firestore
-      let order: Order;
+      let order: Order | null = null;
       try {
         const res = await fetch("/api/orders", {
           method: "POST",
@@ -145,10 +146,28 @@ export default function CheckoutPage() {
         if (data.success && data.order) {
           order = data.order;
         } else {
+          // If the server rejected due to stock or validation, report error
+          if (data.error) {
+            toast.error(data.error);
+            setIsPlacingOrder(false);
+            return;
+          }
           order = await createOrderInStore(orderPayload);
         }
-      } catch {
-        order = await createOrderInStore(orderPayload);
+      } catch (err: any) {
+        try {
+          order = await createOrderInStore(orderPayload);
+        } catch (directErr: any) {
+          toast.error(directErr.message || "Failed to place order. Stock may be unavailable.");
+          setIsPlacingOrder(false);
+          return;
+        }
+      }
+
+      if (!order) {
+        toast.error("Failed to confirm order.");
+        setIsPlacingOrder(false);
+        return;
       }
 
       clearCart();
@@ -158,8 +177,8 @@ export default function CheckoutPage() {
           : "Order Placed Successfully! 🎉"
       );
       router.push(`/order-confirmation/${order.id}`);
-    } catch (error) {
-      toast.error("Failed to place order. Please try again.");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to place order. Please try again.");
       console.error(error);
     } finally {
       setIsPlacingOrder(false);

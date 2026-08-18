@@ -222,7 +222,7 @@ export default function AdminProductsPage() {
       stock: product.stock,
       unit: product.unit || (product.weight ? product.weight.split(" ")[1] || "kg" : "kg"),
       weight: product.weight || "1 kg",
-      weightOptions: product.weightOptions ? [...product.weightOptions] : [],
+      weightOptions: product.weightOptions ? product.weightOptions.map((w) => ({ ...w, stock: Number(w.stock ?? 0) })) : [],
       sku: product.sku,
       gstPercentage: product.gstPercentage || 5,
       images: product.images.length > 0 ? [...product.images] : [
@@ -276,7 +276,7 @@ export default function AdminProductsPage() {
       weight: "250 grams",
       price: formData.price || 100,
       mrp: formData.mrp || Math.round((formData.price || 100) * 1.25),
-      stock: formData.stock || 50,
+      stock: 50,
     };
     setFormData((prev) => ({
       ...prev,
@@ -318,13 +318,13 @@ export default function AdminProductsPage() {
       weight: p.weight,
       price: Math.max(1, Math.round(basePrice * p.factor)),
       mrp: Math.max(1, Math.round(baseMrp * p.factor)),
-      stock: formData.stock || 50,
+      stock: 50,
     }));
     setFormData((prev) => ({
       ...prev,
       weightOptions: generated,
     }));
-    toast.success(`Applied ${presets.length} weight presets based on selling price! 🎉`);
+    toast.success(`Applied ${presets.length} weight presets with separate stock! 🎉`);
   };
 
   // Clear all weight options
@@ -345,6 +345,18 @@ export default function AdminProductsPage() {
     }
 
     const calculatedSlug = formData.slug || formData.name.toLowerCase().replace(/[^a-z0-9]/g, "-");
+    const cleanedWeightOptions = formData.weightOptions.map((opt) => ({
+      ...opt,
+      price: Number(opt.price || 0),
+      mrp: opt.mrp ? Number(opt.mrp) : undefined,
+      stock: Number(opt.stock ?? 0),
+    }));
+
+    const computedStock = cleanedWeightOptions.length > 0
+      ? cleanedWeightOptions.reduce((sum, w) => sum + Number(w.stock || 0), 0)
+      : Number(formData.stock || 0);
+
+    const isInStock = computedStock > 0 && (formData.inStock ?? true);
 
     if (editingProductId) {
       // Edit existing product
@@ -360,16 +372,16 @@ export default function AdminProductsPage() {
           brand: formData.brand,
           price: Number(formData.price),
           mrp: Number(formData.mrp) || Number(formData.price) * 1.25,
-          stock: Number(formData.stock),
+          stock: computedStock,
           unit: formData.unit || "kg",
           weight: formData.weight || `1 ${formData.unit || "kg"}`,
-          weightOptions: formData.weightOptions,
+          weightOptions: cleanedWeightOptions.length > 0 ? cleanedWeightOptions : undefined,
           sku: formData.sku,
           gstPercentage: Number(formData.gstPercentage),
           images: formData.images,
           isFlashSale: formData.isFlashSale,
           has360View: formData.has360View,
-          inStock: formData.stock > 0 && formData.inStock,
+          inStock: isInStock,
           specifications: existingProduct.specifications || [],
           updatedAt: new Date().toISOString(),
         };
@@ -380,7 +392,7 @@ export default function AdminProductsPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(updatedProduct),
         }).catch(() => {});
-        toast.success("Product updated successfully! 🎉");
+        toast.success("Product updated successfully with weight-specific stock! 🎉");
       }
     } else {
       // Create new product
@@ -401,11 +413,11 @@ export default function AdminProductsPage() {
         brand: formData.brand,
         sku: formData.sku || `SKU-MT-${Math.floor(1000 + Math.random() * 9000)}`,
         barcode: `890${Math.floor(1000000000 + Math.random() * 9000000000)}`,
-        stock: Number(formData.stock),
+        stock: computedStock,
         unit: formData.unit || "kg",
-        inStock: formData.stock > 0 && formData.inStock,
+        inStock: isInStock,
         weight: formData.weight || `1 ${formData.unit || "kg"}`,
-        weightOptions: formData.weightOptions,
+        weightOptions: cleanedWeightOptions.length > 0 ? cleanedWeightOptions : undefined,
         dimensions: "15x10x20 cm",
         images: formData.images,
         rating: 5.0,
@@ -425,7 +437,7 @@ export default function AdminProductsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newCreatedProduct),
       }).catch(() => {});
-      toast.success("New product published to live supermarket catalog! 🎉");
+      toast.success("New product published with weight-specific stock! 🎉");
     }
 
     setIsModalOpen(false);
@@ -578,11 +590,34 @@ export default function AdminProductsPage() {
                           <span className="text-zinc-400">•</span>
                           <span className="bg-amber-500/10 text-amber-700 dark:text-amber-300 font-extrabold text-[10px] px-2 py-0.5 rounded-full border border-amber-500/20 flex items-center gap-1">
                             <PackageCheck className="w-3 h-3 text-amber-500" />
-                            {p.weightOptions.length} Weights
+                            {p.weightOptions.length} Weight Variants
                           </span>
                         </>
                       )}
                     </div>
+
+                    {/* Weight-Specific Inventory Breakdown Chips */}
+                    {p.weightOptions && p.weightOptions.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1.5">
+                        {p.weightOptions.map((opt) => (
+                          <span
+                            key={opt.id}
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md border flex items-center gap-1 ${
+                              (opt.stock ?? 0) > 10
+                                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20"
+                                : (opt.stock ?? 0) > 0
+                                ? "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20"
+                                : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30"
+                            }`}
+                          >
+                            <span>{opt.weight}:</span>
+                            <span className="font-black underline">
+                              {(opt.stock ?? 0) > 0 ? `${opt.stock} in stock` : "0 (Out of stock)"}
+                            </span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -609,11 +644,11 @@ export default function AdminProductsPage() {
                       </span>
                     </div>
                     <div className="font-mono text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                      {p.stock} {p.unit || "kg"} in stock
+                      Total: {p.stock} units
                     </div>
                     {p.weight && (
                       <div className="text-[10px] text-zinc-400 font-medium">
-                        Pack Size: {p.weight}
+                        Base: {p.weight}
                       </div>
                     )}
                   </div>
@@ -710,9 +745,28 @@ export default function AdminProductsPage() {
                       <td className="px-6 py-4 font-mono text-[11px] text-zinc-500">
                         <div>SKU: {p.sku}</div>
                         <div className="font-bold text-zinc-700 dark:text-zinc-300">
-                          {p.stock} {p.unit || "kg"}
-                          {p.weight && <span className="ml-1.5 text-[10px] text-amber-600 dark:text-amber-400 font-bold">({p.weight})</span>}
+                          Total: {p.stock} units
                         </div>
+                        {p.weightOptions && p.weightOptions.length > 0 ? (
+                          <div className="flex flex-col gap-1 mt-1 font-sans">
+                            {p.weightOptions.map((w) => (
+                              <span
+                                key={w.id}
+                                className={`text-[10px] px-1.5 py-0.5 rounded font-bold inline-flex items-center gap-1 ${
+                                  (w.stock ?? 0) > 10
+                                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                                    : (w.stock ?? 0) > 0
+                                    ? "bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                                    : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                                }`}
+                              >
+                                {w.weight}: <strong>{w.stock ?? 0}</strong>
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          p.weight && <div className="text-[10px] text-amber-600 dark:text-amber-400 font-bold">{p.weight}</div>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <span
@@ -810,8 +864,28 @@ export default function AdminProductsPage() {
                     </h3>
                     <p className="text-xs text-zinc-400 line-clamp-2">{p.description}</p>
                     <div className="text-[11px] font-mono font-semibold text-zinc-500">
-                      Stock: <strong className="text-zinc-900 dark:text-white">{p.stock} {p.unit || "kg"}</strong>
+                      Stock: <strong className="text-zinc-900 dark:text-white">{p.stock} units</strong>
                     </div>
+
+                    {/* Weight Breakdown in Grid */}
+                    {p.weightOptions && p.weightOptions.length > 0 && (
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {p.weightOptions.map((opt) => (
+                          <span
+                            key={opt.id}
+                            className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                              (opt.stock ?? 0) > 10
+                                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                                : (opt.stock ?? 0) > 0
+                                ? "bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                                : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                            }`}
+                          >
+                            {opt.weight}: <strong>{opt.stock ?? 0}</strong>
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="pt-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
@@ -1090,9 +1164,10 @@ export default function AdminProductsPage() {
                   <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                     <div className="grid grid-cols-12 gap-2 text-[10px] font-bold text-zinc-500 uppercase px-2">
                       <div className="col-span-4 sm:col-span-4">Weight / Size Label *</div>
-                      <div className="col-span-3 sm:col-span-3">Selling Price (₹) *</div>
-                      <div className="col-span-3 sm:col-span-3">MRP (₹)</div>
-                      <div className="col-span-2 sm:col-span-2 text-right">Action</div>
+                      <div className="col-span-2 sm:col-span-2">Price (₹) *</div>
+                      <div className="col-span-2 sm:col-span-2">MRP (₹)</div>
+                      <div className="col-span-3 sm:col-span-3">Stock Units *</div>
+                      <div className="col-span-1 sm:col-span-1 text-right">Action</div>
                     </div>
                     {formData.weightOptions.map((opt, idx) => (
                       <div
@@ -1106,10 +1181,10 @@ export default function AdminProductsPage() {
                             placeholder="e.g. 500 grams (Half Kg)"
                             value={opt.weight}
                             onChange={(e) => handleUpdateWeightOption(idx, "weight", e.target.value)}
-                            className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-xs text-zinc-900 dark:text-white font-bold outline-none focus:border-amber-500"
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-xs text-zinc-900 dark:text-white font-bold outline-none focus:border-amber-500"
                           />
                         </div>
-                        <div className="col-span-3 sm:col-span-3">
+                        <div className="col-span-2 sm:col-span-2">
                           <input
                             type="number"
                             required
@@ -1117,27 +1192,38 @@ export default function AdminProductsPage() {
                             placeholder="Price"
                             value={opt.price}
                             onChange={(e) => handleUpdateWeightOption(idx, "price", Number(e.target.value))}
-                            className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-xs text-zinc-900 dark:text-white font-bold outline-none focus:border-amber-500"
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-xs text-zinc-900 dark:text-white font-bold outline-none focus:border-amber-500"
                           />
                         </div>
-                        <div className="col-span-3 sm:col-span-3">
+                        <div className="col-span-2 sm:col-span-2">
                           <input
                             type="number"
                             min={1}
                             placeholder="MRP"
                             value={opt.mrp || ""}
                             onChange={(e) => handleUpdateWeightOption(idx, "mrp", Number(e.target.value))}
-                            className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-xs text-zinc-900 dark:text-white outline-none focus:border-amber-500"
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-xs text-zinc-900 dark:text-white outline-none focus:border-amber-500"
                           />
                         </div>
-                        <div className="col-span-2 sm:col-span-2 flex justify-end">
+                        <div className="col-span-3 sm:col-span-3">
+                          <input
+                            type="number"
+                            required
+                            min={0}
+                            placeholder="Stock units"
+                            value={opt.stock ?? 0}
+                            onChange={(e) => handleUpdateWeightOption(idx, "stock", Math.max(0, Number(e.target.value)))}
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-amber-500/40 bg-amber-500/5 dark:bg-amber-500/10 text-xs text-amber-900 dark:text-amber-200 font-black outline-none focus:border-amber-500"
+                          />
+                        </div>
+                        <div className="col-span-1 sm:col-span-1 flex justify-end">
                           <button
                             type="button"
                             onClick={() => handleRemoveWeightOption(idx)}
                             className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
                             title="Delete weight option"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>

@@ -51,7 +51,7 @@ export interface ProductWeightOption {
   weight: string; // e.g. "25 grams", "50 grams", "100 grams", "200 grams", "500 grams (Half Kg)", "1 Kg"
   price: number; // custom price for this weight
   mrp?: number; // optional custom MRP
-  stock?: number; // optional stock for this weight
+  stock: number; // weight-specific stock units
   sku?: string;
 }
 
@@ -176,6 +176,7 @@ export interface OrderItem {
   quantity: number;
   variantName?: string;
   selectedWeight?: string;
+  selectedWeightId?: string;
 }
 
 export interface Order {

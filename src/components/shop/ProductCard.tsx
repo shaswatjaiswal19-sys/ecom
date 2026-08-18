@@ -163,12 +163,33 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
 
           <button
             onClick={() => {
-              if (product.weightOptions && product.weightOptions.length > 1 && onQuickView) {
-                onQuickView(product);
+              if (product.weightOptions && product.weightOptions.length > 0) {
+                const defaultWeight = product.weightOptions[0];
+                const inStockWeights = product.weightOptions.filter((w) => Number(w.stock ?? 0) > 0);
+
+                if (inStockWeights.length === 0) {
+                  toast.error("This product is currently out of stock");
+                  return;
+                }
+
+                if (product.weightOptions.length > 1 || Number(defaultWeight.stock ?? 0) <= 0) {
+                  if (onQuickView) {
+                    onQuickView(product);
+                  } else {
+                    addToCart(product, 1, undefined, inStockWeights[0]);
+                    toast.success(`Added to Cart! (${inStockWeights[0].weight})`);
+                  }
+                } else {
+                  addToCart(product, 1, undefined, defaultWeight);
+                  toast.success(`Added to Cart! (${defaultWeight.weight})`);
+                }
               } else {
-                const defaultWeight = product.weightOptions?.[0];
-                addToCart(product, 1, undefined, defaultWeight);
-                toast.success(`Added to Cart! ${defaultWeight ? `(${defaultWeight.weight})` : ""}`);
+                if (product.stock <= 0) {
+                  toast.error("This product is currently out of stock");
+                  return;
+                }
+                addToCart(product, 1);
+                toast.success("Added to Cart!");
               }
             }}
             className="p-2.5 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 hover:bg-amber-500 hover:text-black dark:hover:bg-amber-400 transition-all shadow-sm"

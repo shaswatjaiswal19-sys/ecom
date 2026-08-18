@@ -41,6 +41,11 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
   const currentMrp = selectedWeight?.mrp ?? selectedVariant?.mrp ?? product.mrp;
   const discount = calculateDiscount(currentMrp, currentPrice);
 
+  const currentAvailableStock = selectedWeight
+    ? Number(selectedWeight.stock ?? 0)
+    : Number(product.stock ?? 0);
+  const isWeightInStock = currentAvailableStock > 0;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
       <div className="fixed inset-0 bg-black/70 backdrop-blur-md" onClick={onClose} />
@@ -122,23 +127,30 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
                     Select Pack Size / Weight:
                   </label>
                   {selectedWeight && (
-                    <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">
-                      {selectedWeight.weight}
+                    <span className={`text-[11px] font-bold ${isWeightInStock ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                      {selectedWeight.weight} ({isWeightInStock ? `${currentAvailableStock} in stock` : "Out of stock"})
                     </span>
                   )}
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {product.weightOptions.map((opt) => {
                     const isSelected = selectedWeight?.id === opt.id || selectedWeight?.weight === opt.weight;
+                    const optStock = Number(opt.stock ?? 0);
+                    const optInStock = optStock > 0;
                     return (
                       <button
                         key={opt.id}
                         type="button"
-                        onClick={() => setSelectedWeight(opt)}
+                        onClick={() => {
+                          setSelectedWeight(opt);
+                          setQuantity(1);
+                        }}
                         className={`relative p-2 rounded-xl text-left border-2 transition-all flex flex-col justify-between ${
                           isSelected
                             ? "border-amber-500 bg-amber-500/10 text-amber-900 dark:text-amber-200 shadow-sm ring-2 ring-amber-500/20"
-                            : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300"
+                            : optInStock
+                            ? "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-zinc-50/50 dark:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300"
+                            : "border-rose-500/30 bg-rose-500/5 text-zinc-400 dark:text-zinc-500 opacity-80"
                         }`}
                       >
                         <div className="flex items-center justify-between gap-1">
@@ -151,15 +163,20 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
                             </span>
                           )}
                         </div>
-                        <div className="mt-1 flex items-baseline gap-1.5">
-                          <span className="text-xs font-black text-zinc-900 dark:text-white">
-                            {formatCurrency(opt.price)}
-                          </span>
-                          {opt.mrp && opt.mrp > opt.price && (
-                            <span className="text-[10px] text-zinc-400 line-through">
-                              {formatCurrency(opt.mrp)}
+                        <div className="mt-1 flex items-baseline justify-between gap-1">
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-xs font-black text-zinc-900 dark:text-white">
+                              {formatCurrency(opt.price)}
                             </span>
-                          )}
+                            {opt.mrp && opt.mrp > opt.price && (
+                              <span className="text-[9px] text-zinc-400 line-through">
+                                {formatCurrency(opt.mrp)}
+                              </span>
+                            )}
+                          </div>
+                          <span className={`text-[9px] font-bold ${optInStock ? (optStock <= 10 ? "text-amber-500" : "text-emerald-600 dark:text-emerald-400") : "text-rose-500 font-extrabold"}`}>
+                            {optInStock ? `${optStock} left` : "0 stock"}
+                          </span>
                         </div>
                       </button>
                     );
@@ -192,7 +209,7 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
               </div>
             )}
 
-            {/* Price Display */}
+            {/* Price & Stock Display */}
             <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex flex-wrap items-baseline justify-between gap-3">
               <div className="flex items-baseline gap-3">
                 <span className="text-2xl font-black text-zinc-900 dark:text-zinc-100">
@@ -204,11 +221,15 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
                   </span>
                 )}
               </div>
-              {(selectedWeight?.weight || product.weight) && (
-                <span className="text-xs font-extrabold bg-amber-500/10 text-amber-700 dark:text-amber-300 px-2.5 py-1 rounded-full border border-amber-500/20">
-                  Net: {selectedWeight?.weight || product.weight} ({product.stock} {product.unit || "kg"} in stock)
-                </span>
-              )}
+              <span className={`text-xs font-extrabold px-2.5 py-1 rounded-full border ${
+                isWeightInStock
+                  ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20"
+                  : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+              }`}>
+                {isWeightInStock
+                  ? `${selectedWeight?.weight || product.weight} • ${currentAvailableStock} in stock`
+                  : `${selectedWeight?.weight || product.weight} • Out of Stock`}
+              </span>
             </div>
           </div>
 
@@ -222,18 +243,20 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
               <div className="flex items-center gap-3">
                 <button
                   type="button"
+                  disabled={quantity <= 1 || !isWeightInStock}
                   onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
-                  className="w-8 h-8 rounded-xl bg-white dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 flex items-center justify-center text-zinc-700 dark:text-zinc-200 hover:border-amber-500 hover:text-amber-500 transition-colors"
+                  className="w-8 h-8 rounded-xl bg-white dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 flex items-center justify-center text-zinc-700 dark:text-zinc-200 hover:border-amber-500 hover:text-amber-500 transition-colors disabled:opacity-40"
                 >
                   <Minus className="w-3.5 h-3.5" />
                 </button>
                 <span className="text-sm font-black text-zinc-900 dark:text-white w-6 text-center tabular-nums">
-                  {quantity}
+                  {isWeightInStock ? quantity : 0}
                 </span>
                 <button
                   type="button"
-                  onClick={() => setQuantity((prev) => prev + 1)}
-                  className="w-8 h-8 rounded-xl bg-white dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 flex items-center justify-center text-zinc-700 dark:text-zinc-200 hover:border-amber-500 hover:text-amber-500 transition-colors"
+                  disabled={quantity >= currentAvailableStock || !isWeightInStock}
+                  onClick={() => setQuantity((prev) => Math.min(currentAvailableStock, prev + 1))}
+                  className="w-8 h-8 rounded-xl bg-white dark:bg-zinc-700 border border-zinc-200 dark:border-zinc-600 flex items-center justify-center text-zinc-700 dark:text-zinc-200 hover:border-amber-500 hover:text-amber-500 transition-colors disabled:opacity-40"
                 >
                   <Plus className="w-3.5 h-3.5" />
                 </button>
@@ -241,14 +264,18 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
             </div>
 
             <button
+              disabled={!isWeightInStock || currentAvailableStock <= 0}
               onClick={() => {
                 addToCart(product, quantity, selectedVariant, selectedWeight);
                 toast.success(`Added ${quantity} × ${product.name} ${selectedWeight ? `(${selectedWeight.weight})` : ""} to Cart!`);
                 onClose();
               }}
-              className="w-full py-3.5 rounded-xl bg-amber-500 text-black font-bold text-xs uppercase tracking-wider hover:bg-amber-400 transition-colors shadow-lg flex items-center justify-center gap-2"
+              className="w-full py-3.5 rounded-xl bg-amber-500 text-black font-bold text-xs uppercase tracking-wider hover:bg-amber-400 transition-colors shadow-lg flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-amber-500"
             >
-              <ShoppingBag className="w-4 h-4" /> Add to Cart Now • {formatCurrency(currentPrice * quantity)}
+              <ShoppingBag className="w-4 h-4" />
+              {isWeightInStock
+                ? `Add to Cart Now • ${formatCurrency(currentPrice * quantity)}`
+                : `Out of Stock for ${selectedWeight?.weight || "this weight"}`}
             </button>
 
             <div className="flex justify-around text-[10px] text-zinc-500 font-medium pt-1">

@@ -123,37 +123,45 @@ export default function CartDrawer() {
                     </div>
 
                     <div className="flex items-center justify-between mt-2">
-                      <div className="flex items-center gap-2 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2 py-0.5 bg-white dark:bg-zinc-800">
-                        <button
-                          onClick={() =>
-                            updateQuantity(
-                              item.product.id,
-                              item.quantity - 1,
-                              item.selectedVariant?.id,
-                              weightId
-                            )
-                          }
-                          className="text-zinc-500 hover:text-black dark:hover:text-white"
-                        >
-                          <Minus className="w-3 h-3" />
-                        </button>
-                        <span className="text-xs font-bold w-4 text-center">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() =>
-                            updateQuantity(
-                              item.product.id,
-                              item.quantity + 1,
-                              item.selectedVariant?.id,
-                              weightId
-                            )
-                          }
-                          className="text-zinc-500 hover:text-black dark:hover:text-white"
-                        >
-                          <Plus className="w-3 h-3" />
-                        </button>
-                      </div>
+                      {(() => {
+                        const maxStock = item.selectedWeight
+                          ? Number(item.selectedWeight.stock ?? 0)
+                          : Number(item.product.stock ?? 0);
+                        return (
+                          <div className="flex items-center gap-2 border border-zinc-200 dark:border-zinc-700 rounded-lg px-2 py-0.5 bg-white dark:bg-zinc-800">
+                            <button
+                              onClick={() =>
+                                updateQuantity(
+                                  item.product.id,
+                                  item.quantity - 1,
+                                  item.selectedVariant?.id,
+                                  weightId
+                                )
+                              }
+                              className="text-zinc-500 hover:text-black dark:hover:text-white"
+                            >
+                              <Minus className="w-3 h-3" />
+                            </button>
+                            <span className="text-xs font-bold w-4 text-center">
+                              {item.quantity}
+                            </span>
+                            <button
+                              disabled={item.quantity >= maxStock}
+                              onClick={() =>
+                                updateQuantity(
+                                  item.product.id,
+                                  item.quantity + 1,
+                                  item.selectedVariant?.id,
+                                  weightId
+                                )
+                              }
+                              className="text-zinc-500 hover:text-black dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
+                        );
+                      })()}
 
                       <button
                         onClick={() =>

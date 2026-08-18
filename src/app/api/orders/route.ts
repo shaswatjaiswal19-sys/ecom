@@ -49,7 +49,7 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message || "Failed to place order" }, { status: 500 });
+    return NextResponse.json({ success: false, error: error.message || "Failed to place order" }, { status: 400 });
   }
 }
 

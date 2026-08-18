@@ -55,6 +55,9 @@ export const useCartStore = create<CartState>()(
       discountAmount: 0,
 
       addToCart: (product, quantity = 1, variant, weight) => {
+        const maxStock = weight ? Number(weight.stock ?? 0) : Number(product.stock ?? 0);
+        if (maxStock <= 0) return;
+
         set((state) => {
           const existingIndex = state.cart.findIndex(
             (item) =>
@@ -65,11 +68,17 @@ export const useCartStore = create<CartState>()(
 
           if (existingIndex > -1) {
             const updated = [...state.cart];
-            updated[existingIndex].quantity += quantity;
+            const newQty = Math.min(maxStock, updated[existingIndex].quantity + quantity);
+            updated[existingIndex].quantity = newQty;
+            // Update selectedWeight stock in cart item if available
+            if (weight) {
+              updated[existingIndex].selectedWeight = weight;
+            }
             return { cart: updated, isCartOpen: true };
           } else {
+            const safeQty = Math.min(maxStock, quantity);
             return {
-              cart: [...state.cart, { product, quantity, selectedVariant: variant, selectedWeight: weight }],
+              cart: [...state.cart, { product, quantity: safeQty, selectedVariant: variant, selectedWeight: weight }],
               isCartOpen: true,
             };
           }
@@ -101,7 +110,11 @@ export const useCartStore = create<CartState>()(
               (variantId ? item.selectedVariant?.id === variantId : true) &&
               (weightId ? (item.selectedWeight?.id === weightId || item.selectedWeight?.weight === weightId) : true)
             ) {
-              return { ...item, quantity };
+              const maxStock = item.selectedWeight
+                ? Number(item.selectedWeight.stock ?? 0)
+                : Number(item.product.stock ?? 0);
+              const safeQty = Math.min(maxStock > 0 ? maxStock : 1, quantity);
+              return { ...item, quantity: safeQty };
             }
             return item;
           }),

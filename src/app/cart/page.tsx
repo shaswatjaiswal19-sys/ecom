@@ -119,21 +119,29 @@ export default function CartPage() {
                       </div>
 
                       {/* Qty Controller */}
-                      <div className="flex items-center gap-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-1.5">
-                        <button
-                          onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedVariant?.id, weightId)}
-                          className="text-zinc-500 hover:text-black dark:hover:text-white transition-colors"
-                        >
-                          <Minus className="w-3.5 h-3.5" />
-                        </button>
-                        <span className="text-sm font-black text-zinc-900 dark:text-white w-6 text-center tabular-nums">{item.quantity}</span>
-                        <button
-                          onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedVariant?.id, weightId)}
-                          className="text-zinc-500 hover:text-black dark:hover:text-white transition-colors"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                      {(() => {
+                        const maxStock = item.selectedWeight
+                          ? Number(item.selectedWeight.stock ?? 0)
+                          : Number(item.product.stock ?? 0);
+                        return (
+                          <div className="flex items-center gap-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-1.5">
+                            <button
+                              onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedVariant?.id, weightId)}
+                              className="text-zinc-500 hover:text-black dark:hover:text-white transition-colors"
+                            >
+                              <Minus className="w-3.5 h-3.5" />
+                            </button>
+                            <span className="text-sm font-black text-zinc-900 dark:text-white w-6 text-center tabular-nums">{item.quantity}</span>
+                            <button
+                              disabled={item.quantity >= maxStock}
+                              onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedVariant?.id, weightId)}
+                              className="text-zinc-500 hover:text-black dark:hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        );
+                      })()}
 
                       {/* Line Total */}
                       <span className="text-sm font-black text-amber-600 dark:text-amber-400">
