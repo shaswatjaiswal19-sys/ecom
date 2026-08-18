@@ -46,12 +46,12 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-10">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 py-6 sm:py-12">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between mb-6 sm:mb-10">
           <div>
-            <h1 className="text-4xl font-black text-zinc-900 dark:text-white">Your Cart</h1>
-            <p className="text-sm text-zinc-500 mt-1">{itemCount} item{itemCount !== 1 ? "s" : ""} in your luxury selection</p>
+            <h1 className="text-2xl sm:text-4xl font-black text-zinc-900 dark:text-white">Your Kirana Cart</h1>
+            <p className="text-xs sm:text-sm text-zinc-500 mt-0.5">{itemCount} item{itemCount !== 1 ? "s" : ""} in your bag</p>
           </div>
           <button
             onClick={() => { clearCart(); toast.success("Cart cleared."); }}
@@ -61,9 +61,9 @@ export default function CartPage() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
           {/* Cart Items */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-2 space-y-3 sm:space-y-4">
             {cart.map((item, idx) => {
               const price = item.selectedWeight?.price || item.selectedVariant?.price || item.product.price;
               const mrp = item.selectedWeight?.mrp || item.selectedVariant?.mrp || item.product.mrp;
@@ -71,27 +71,27 @@ export default function CartPage() {
               return (
                 <div
                   key={`${item.product.id}-${item.selectedVariant?.id || ""}-${weightId || idx}`}
-                  className="flex gap-5 p-5 bg-white dark:bg-zinc-900 rounded-3xl border border-black/5 dark:border-white/10 shadow-sm hover:shadow-luxury transition-all group"
+                  className="flex gap-3 sm:gap-5 p-3.5 sm:p-5 bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-3xl border border-black/5 dark:border-white/10 shadow-sm transition-all group"
                 >
                   {/* Product Image */}
-                  <Link href={`/shop/${item.product.slug}`} className="relative w-28 h-28 rounded-2xl overflow-hidden bg-zinc-50 dark:bg-zinc-800 flex-shrink-0 border border-black/5 dark:border-white/5">
-                    <Image src={item.product.images[0]} alt={item.product.name} fill className="object-contain p-3 group-hover:scale-105 transition-transform duration-300" />
+                  <Link href={`/shop/${item.product.slug}`} className="relative w-20 h-20 sm:w-28 sm:h-28 rounded-xl sm:rounded-2xl overflow-hidden bg-zinc-50 dark:bg-zinc-800 flex-shrink-0 border border-black/5 dark:border-white/5">
+                    <Image src={item.product.images[0]} alt={item.product.name} fill className="object-contain p-2 sm:p-3 group-hover:scale-105 transition-transform duration-300" />
                   </Link>
 
                   {/* Details */}
                   <div className="flex-1 flex flex-col justify-between min-w-0">
                     <div>
-                      <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start justify-between gap-1">
                         <div>
-                          <span className="text-[11px] font-bold text-amber-500 uppercase tracking-wider">{item.product.brand}</span>
+                          <span className="text-[10px] sm:text-[11px] font-bold text-amber-500 uppercase tracking-wider">{item.product.brand}</span>
                           <Link href={`/shop/${item.product.slug}`}>
-                            <h3 className="text-sm font-bold text-zinc-900 dark:text-white hover:text-amber-500 transition-colors line-clamp-1 mt-0.5">
+                            <h3 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white hover:text-amber-500 transition-colors line-clamp-1 mt-0.5">
                               {item.product.name}
                             </h3>
                           </Link>
                           {item.selectedWeight ? (
-                            <span className="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full inline-block mt-1 border border-amber-500/20">
-                              Selected Pack: {item.selectedWeight.weight}
+                            <span className="text-[10px] sm:text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 sm:px-2.5 py-0.5 rounded-full inline-block mt-0.5 border border-amber-500/20">
+                              Pack: {item.selectedWeight.weight}
                             </span>
                           ) : item.selectedVariant ? (
                             <p className="text-xs text-zinc-400 mt-0.5">Variant: {item.selectedVariant.name}</p>
@@ -109,12 +109,12 @@ export default function CartPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between flex-wrap gap-2 mt-3">
+                    <div className="flex items-center justify-between flex-wrap gap-2 mt-2 sm:mt-3">
                       {/* Price */}
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-lg font-black text-zinc-900 dark:text-white">{formatCurrency(price)}</span>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-sm sm:text-lg font-black text-zinc-900 dark:text-white">{formatCurrency(price)}</span>
                         {mrp > price && (
-                          <span className="text-xs text-zinc-400 line-through">{formatCurrency(mrp)}</span>
+                          <span className="text-[10px] sm:text-xs text-zinc-400 line-through">{formatCurrency(mrp)}</span>
                         )}
                       </div>
 
@@ -124,18 +124,18 @@ export default function CartPage() {
                           ? Number(item.selectedWeight.stock ?? 0)
                           : Number(item.product.stock ?? 0);
                         return (
-                          <div className="flex items-center gap-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-1.5">
+                          <div className="flex items-center gap-1.5 sm:gap-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-2 sm:px-3 py-1 sm:py-1.5">
                             <button
                               onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedVariant?.id, weightId)}
-                              className="text-zinc-500 hover:text-black dark:hover:text-white transition-colors"
+                              className="text-zinc-500 hover:text-black dark:hover:text-white transition-colors p-0.5"
                             >
                               <Minus className="w-3.5 h-3.5" />
                             </button>
-                            <span className="text-sm font-black text-zinc-900 dark:text-white w-6 text-center tabular-nums">{item.quantity}</span>
+                            <span className="text-xs sm:text-sm font-black text-zinc-900 dark:text-white w-5 sm:w-6 text-center tabular-nums">{item.quantity}</span>
                             <button
                               disabled={item.quantity >= maxStock}
                               onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedVariant?.id, weightId)}
-                              className="text-zinc-500 hover:text-black dark:hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                              className="text-zinc-500 hover:text-black dark:hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed p-0.5"
                             >
                               <Plus className="w-3.5 h-3.5" />
                             </button>
@@ -144,7 +144,7 @@ export default function CartPage() {
                       })()}
 
                       {/* Line Total */}
-                      <span className="text-sm font-black text-amber-600 dark:text-amber-400">
+                      <span className="text-xs sm:text-sm font-black text-amber-600 dark:text-amber-400">
                         {formatCurrency(price * item.quantity)}
                       </span>
                     </div>
@@ -153,28 +153,25 @@ export default function CartPage() {
               );
             })}
 
-            {/* Gift Wrap Option */}
-            <div className="flex items-center gap-4 p-5 bg-white dark:bg-zinc-900 rounded-3xl border border-dashed border-amber-500/30">
-              <Gift className="w-8 h-8 text-amber-500 flex-shrink-0" />
+            {/* Free Delivery Promise */}
+            <div className="flex items-center gap-3 p-4 bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-3xl border border-emerald-500/20 bg-emerald-500/5">
+              <Truck className="w-6 h-6 text-emerald-500 flex-shrink-0" />
               <div>
-                <h4 className="text-sm font-bold text-zinc-900 dark:text-white">Add Premium Gift Wrapping</h4>
-                <p className="text-xs text-zinc-500">Luxury matte-black box with gold ribbon & personalized message card — ₹299</p>
+                <h4 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white">24-Hour Express Kirana Delivery Guaranteed</h4>
+                <p className="text-[11px] text-zinc-500">Insulated fresh packaging dispatched direct from nearest farm warehouse.</p>
               </div>
-              <button className="ml-auto px-4 py-2 rounded-xl border border-amber-500 text-amber-500 text-xs font-bold hover:bg-amber-500 hover:text-black transition-colors flex-shrink-0">
-                Add Gift Wrap
-              </button>
             </div>
           </div>
 
           {/* Order Summary Sidebar */}
           <div className="space-y-4">
             {/* Coupon Card */}
-            <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-black/5 dark:border-white/10 shadow-sm">
-              <h3 className="text-sm font-bold text-zinc-900 dark:text-white mb-4 flex items-center gap-2">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-black/5 dark:border-white/10 shadow-sm">
+              <h3 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white mb-3 sm:mb-4 flex items-center gap-2">
                 <Tag className="w-4 h-4 text-amber-500" /> Promo Code
               </h3>
               {couponCode ? (
-                <div className="flex items-center justify-between bg-emerald-500/10 border border-emerald-500/30 p-3 rounded-xl">
+                <div className="flex items-center justify-between bg-emerald-500/10 border border-emerald-500/30 p-2.5 rounded-xl">
                   <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                     ✓ {couponCode} — saving {formatCurrency(discountAmount)}
                   </span>
@@ -188,24 +185,23 @@ export default function CartPage() {
                     value={couponInput}
                     onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
                     onKeyDown={(e) => e.key === "Enter" && handleApply()}
-                    className="flex-1 px-3 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-xs outline-none focus:border-amber-500 transition-colors font-mono"
+                    className="flex-1 px-3 py-2 sm:py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-xs outline-none focus:border-amber-500 transition-colors font-mono"
                   />
                   <button
                     onClick={handleApply}
-                    className="px-4 py-2.5 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 text-xs font-bold hover:bg-amber-500 hover:text-black transition-colors"
+                    className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 text-xs font-bold hover:bg-amber-500 hover:text-black transition-colors"
                   >
                     Apply
                   </button>
                 </div>
               )}
-              <p className="text-[10px] text-zinc-400 mt-2">Try: <strong>MANOJ10</strong>, <strong>WELCOME10</strong>, or <strong>LUXURY500</strong></p>
             </div>
 
             {/* Order Summary */}
-            <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-black/5 dark:border-white/10 shadow-sm">
-              <h3 className="text-sm font-bold text-zinc-900 dark:text-white mb-5">Order Summary</h3>
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-black/5 dark:border-white/10 shadow-sm">
+              <h3 className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white mb-4">Order Summary</h3>
 
-              <div className="space-y-3 text-sm">
+              <div className="space-y-2.5 text-xs sm:text-sm">
                 <div className="flex justify-between text-zinc-600 dark:text-zinc-400">
                   <span>Subtotal ({itemCount} items)</span>
                   <span className="font-semibold text-zinc-900 dark:text-white">{formatCurrency(subtotal)}</span>
@@ -224,30 +220,23 @@ export default function CartPage() {
                   <span className="flex items-center gap-1">
                     <Truck className="w-3.5 h-3.5" /> Express Shipping
                   </span>
-                  {shippingFee === 0 ? (
-                    <span className="font-bold text-emerald-500">FREE</span>
-                  ) : (
-                    <span className="font-semibold">{formatCurrency(shippingFee)}</span>
-                  )}
+                  <span className="font-bold text-emerald-500 uppercase">FREE</span>
                 </div>
-                {shippingFee > 0 && (
-                  <p className="text-[10px] text-zinc-400">Add {formatCurrency(5000 - subtotal)} more for free shipping</p>
-                )}
 
                 <div className="border-t border-zinc-200 dark:border-zinc-800 pt-3 flex justify-between">
-                  <span className="text-base font-black text-zinc-900 dark:text-white">Total Amount</span>
-                  <span className="text-base font-black text-amber-600 dark:text-amber-400">{formatCurrency(finalTotal)}</span>
+                  <span className="text-sm sm:text-base font-black text-zinc-900 dark:text-white">Total Amount</span>
+                  <span className="text-base sm:text-lg font-black text-amber-600 dark:text-amber-400">{formatCurrency(total)}</span>
                 </div>
               </div>
 
               <Link
                 href="/checkout"
-                className="mt-5 w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-400 text-black font-bold text-sm flex items-center justify-center gap-2 hover:brightness-110 transition-all shadow-lg shadow-amber-500/20 hover:-translate-y-0.5"
+                className="mt-5 w-full py-3.5 sm:py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 text-black font-black text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 hover:from-amber-400 hover:to-amber-500 transition-all shadow-lg shadow-amber-500/20 active:scale-98"
               >
                 Proceed to Checkout <ArrowRight className="w-4 h-4" />
               </Link>
 
-              <div className="mt-4 flex items-center justify-center gap-1.5 text-[10px] text-zinc-400">
+              <div className="mt-3.5 flex items-center justify-center gap-1.5 text-[10px] text-zinc-400">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
                 256-bit SSL Encrypted Secure Checkout
               </div>
@@ -256,7 +245,7 @@ export default function CartPage() {
             {/* Continue Shopping */}
             <Link
               href="/shop"
-              className="w-full py-3 rounded-2xl border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 text-sm font-bold flex items-center justify-center gap-2 hover:border-amber-500 hover:text-amber-500 transition-colors"
+              className="w-full py-2.5 sm:py-3 rounded-2xl border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 hover:border-amber-500 hover:text-amber-500 transition-colors"
             >
               ← Continue Shopping
             </Link>

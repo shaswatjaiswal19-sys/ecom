@@ -115,24 +115,24 @@ export default function HomePage() {
       />
 
       {/* ===== CLEAN CENTERED HERO SECTION ===== */}
-      <section className="relative min-h-[78vh] flex items-center justify-center overflow-hidden py-16 lg:py-24">
+      <section className="relative min-h-[65vh] sm:min-h-[78vh] flex items-center justify-center overflow-hidden py-10 sm:py-16 lg:py-24">
         {/* Ambient Kirana Gold & Emerald Atmospheric Glows */}
         <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-emerald-500/5 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900 pointer-events-none" />
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-amber-500/10 blur-[140px] pointer-events-none" />
-        <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full bg-emerald-500/10 blur-[120px] pointer-events-none" />
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] sm:w-[600px] h-[350px] sm:h-[600px] rounded-full bg-amber-500/10 blur-[100px] sm:blur-[140px] pointer-events-none" />
+        <div className="absolute bottom-0 right-1/4 w-[250px] sm:w-[400px] h-[250px] sm:h-[400px] rounded-full bg-emerald-500/10 blur-[90px] sm:blur-[120px] pointer-events-none" />
 
         <motion.div
           style={{ opacity: heroOpacity, y: heroY }}
-          className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center w-full space-y-8"
+          className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center w-full space-y-5 sm:space-y-8"
         >
           {/* Top Badge */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs sm:text-sm font-black tracking-wider uppercase shadow-xs"
+            className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-[11px] sm:text-sm font-black tracking-wider uppercase shadow-xs"
           >
-            <Sparkles className="w-4 h-4 text-amber-500 animate-pulse" />
+            <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
             <span>India's Premier Organic Kirana Store</span>
           </motion.div>
 
@@ -141,14 +141,14 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
-            className="space-y-5 max-w-3xl"
+            className="space-y-3 sm:space-y-5 max-w-3xl"
           >
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.08] text-zinc-900 dark:text-white">
+            <h1 className="text-3xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1] text-zinc-900 dark:text-white">
               Pure Kirana. <br className="hidden sm:inline" />
               <span className="gold-gradient-text">Farm Fresh Daily.</span>
             </h1>
-            <p className="text-zinc-600 dark:text-zinc-300 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto">
-              Experience authentic purity — A2 Gir cow Bilona ghee, 2-year aged Royal Basmati rice, hand-picked Ratnagiri Alphonso mangoes, cold-pressed oils, and heritage spices delivered straight to your kitchen in 24 hours.
+            <p className="text-zinc-600 dark:text-zinc-300 text-xs sm:text-base lg:text-lg leading-relaxed max-w-2xl mx-auto font-medium">
+              Experience authentic purity — A2 Gir cow Bilona ghee, 2-year aged Royal Basmati rice, hand-picked mangoes, cold-pressed oils, and heritage spices delivered straight to your kitchen in 24 hours.
             </p>
           </motion.div>
 
@@ -157,18 +157,18 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
-            className="flex flex-wrap items-center justify-center gap-4 pt-2"
+            className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 pt-1 w-full max-w-md sm:max-w-none"
           >
             <Link
               href="/shop"
-              className="px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-black text-sm sm:text-base transition-all shadow-xl shadow-amber-500/25 flex items-center gap-2 hover:gap-3 group"
+              className="w-full sm:w-auto px-7 py-3.5 sm:px-8 sm:py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-black text-xs sm:text-base transition-all shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 hover:gap-3 group active:scale-98"
             >
               <span>Shop Kirana Essentials</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
               href="/shop?filter=flash-sale"
-              className="px-7 py-4 rounded-2xl bg-zinc-100 dark:bg-zinc-850 text-zinc-900 dark:text-white hover:bg-zinc-200 dark:hover:bg-zinc-800 font-bold text-sm sm:text-base transition-all border border-zinc-200 dark:border-zinc-700 flex items-center gap-2"
+              className="w-full sm:w-auto px-6 py-3 sm:px-7 sm:py-4 rounded-2xl bg-zinc-100 dark:bg-zinc-850 text-zinc-900 dark:text-white hover:bg-zinc-200 dark:hover:bg-zinc-800 font-bold text-xs sm:text-base transition-all border border-zinc-200 dark:border-zinc-700 flex items-center justify-center gap-2 active:scale-98"
             >
               <Flame className="w-4 h-4 text-amber-500" />
               <span>Today's Flash Deals</span>
@@ -180,26 +180,26 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.3, ease: "easeOut" }}
-            className="grid grid-cols-3 gap-8 sm:gap-16 pt-8 border-t border-zinc-200 dark:border-zinc-800/80 max-w-xl w-full"
+            className="grid grid-cols-3 gap-4 sm:gap-16 pt-5 sm:pt-8 border-t border-zinc-200 dark:border-zinc-800/80 max-w-xl w-full"
           >
-            <div className="space-y-1 text-center">
-              <div className="text-2xl sm:text-3xl font-black text-amber-500">24-Hr</div>
-              <div className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 font-bold">Express Kirana</div>
+            <div className="space-y-0.5 text-center">
+              <div className="text-xl sm:text-3xl font-black text-amber-500">24-Hr</div>
+              <div className="text-[10px] sm:text-sm text-zinc-500 dark:text-zinc-400 font-bold">Express Kirana</div>
             </div>
-            <div className="space-y-1 text-center">
-              <div className="text-2xl sm:text-3xl font-black text-emerald-500">100%</div>
-              <div className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 font-bold">Shudh & Organic</div>
+            <div className="space-y-0.5 text-center">
+              <div className="text-xl sm:text-3xl font-black text-emerald-500">100%</div>
+              <div className="text-[10px] sm:text-sm text-zinc-500 dark:text-zinc-400 font-bold">Shudh & Organic</div>
             </div>
-            <div className="space-y-1 text-center">
-              <div className="text-2xl sm:text-3xl font-black text-amber-500">500K+</div>
-              <div className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 font-bold">Happy Homes</div>
+            <div className="space-y-0.5 text-center">
+              <div className="text-xl sm:text-3xl font-black text-amber-500">500K+</div>
+              <div className="text-[10px] sm:text-sm text-zinc-500 dark:text-zinc-400 font-bold">Happy Homes</div>
             </div>
           </motion.div>
         </motion.div>
       </section>
 
-      {/* ===== CONTINUOUS MOVING KIRANA MARQUEE TICKER (Slow & Smooth) ===== */}
-      <div className="relative py-3.5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-zinc-950 font-black text-xs uppercase tracking-wider overflow-hidden shadow-md">
+      {/* ===== CONTINUOUS MOVING KIRANA MARQUEE TICKER ===== */}
+      <div className="relative py-2.5 sm:py-3.5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-zinc-950 font-black text-[11px] sm:text-xs uppercase tracking-wider overflow-hidden shadow-md">
         <div className="animate-kirana-marquee whitespace-nowrap gap-8 font-extrabold cursor-default">
           {MARQUEE_ITEMS.concat(MARQUEE_ITEMS).map((item, idx) => (
             <span key={idx} className="flex items-center gap-3 pr-8">
@@ -210,33 +210,33 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ===== FEATURED KIRANA AISLES (If Categories Exist) ===== */}
+      {/* ===== FEATURED KIRANA AISLES (2-Column Mobile Grid) ===== */}
       {displayCategories.length > 0 && (
-        <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div className="space-y-1">
-              <span className="text-xs font-black uppercase tracking-wider text-amber-500">Farm Direct Supermarket</span>
-              <h2 className="text-3xl sm:text-4xl font-black text-zinc-900 dark:text-white">
+        <section className="py-10 sm:py-20 max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 space-y-6 sm:space-y-12">
+          <div className="flex items-end justify-between gap-4">
+            <div className="space-y-0.5">
+              <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-amber-500">Farm Direct Supermarket</span>
+              <h2 className="text-xl sm:text-4xl font-black text-zinc-900 dark:text-white">
                 Explore Kirana Aisles
               </h2>
             </div>
-            <Link href="/shop" className="text-xs font-bold text-amber-500 hover:underline flex items-center gap-1">
-              View All Categories ({displayCategories.length}) <ChevronRight className="w-4 h-4" />
+            <Link href="/shop" className="text-xs font-bold text-amber-500 hover:underline flex items-center gap-0.5 flex-shrink-0">
+              View All ({displayCategories.length}) <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             {displayCategories.map((cat, idx) => (
               <motion.div
                 key={cat.id}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: idx * 0.1 }}
+                transition={{ duration: 0.4, delay: idx * 0.05 }}
               >
                 <Link
                   href={`/shop?category=${encodeURIComponent(cat.name)}`}
-                  className="group relative rounded-3xl overflow-hidden h-80 border border-black/5 dark:border-white/10 shadow-md flex flex-col justify-end p-6 bg-zinc-950 text-white block hover:shadow-xl transition-all"
+                  className="group relative rounded-2xl sm:rounded-3xl overflow-hidden h-48 sm:h-80 border border-black/5 dark:border-white/10 shadow-md flex flex-col justify-end p-3.5 sm:p-6 bg-zinc-950 text-white block hover:shadow-xl transition-all"
                 >
                   <img
                     src={cat.image}
@@ -245,14 +245,14 @@ export default function HomePage() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent pointer-events-none" />
 
-                  <div className="relative z-10 space-y-2">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 bg-black/60 px-3 py-1 rounded-full backdrop-blur-md inline-block border border-amber-500/30">
-                      {cat.itemCount || 0}+ Items in Stock
+                  <div className="relative z-10 space-y-1 sm:space-y-2">
+                    <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-amber-400 bg-black/60 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full backdrop-blur-md inline-block border border-amber-500/30">
+                      {cat.itemCount || 0}+ Items
                     </span>
-                    <h3 className="text-xl font-black group-hover:text-amber-400 transition-colors leading-tight">
+                    <h3 className="text-sm sm:text-xl font-black group-hover:text-amber-400 transition-colors leading-tight line-clamp-1 sm:line-clamp-none">
                       {cat.name}
                     </h3>
-                    <p className="text-xs text-zinc-300 line-clamp-2 leading-relaxed">{cat.description}</p>
+                    <p className="text-[10px] sm:text-xs text-zinc-300 line-clamp-1 sm:line-clamp-2 leading-relaxed hidden xs:block">{cat.description}</p>
                   </div>
                 </Link>
               </motion.div>
@@ -261,21 +261,21 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* ===== FLASH SALE WITH COUNTDOWN TIMER (If Flash Deals Exist) ===== */}
+      {/* ===== FLASH SALE WITH COUNTDOWN TIMER (2-Column Mobile Grid) ===== */}
       {flashSaleProducts.length > 0 && (
-        <section className="py-20 bg-gradient-to-br from-amber-500/10 via-zinc-900 to-zinc-950 text-white border-y border-amber-500/20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-zinc-800 pb-8">
-              <div className="space-y-2">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500 text-black font-black text-xs uppercase tracking-wider">
-                  <Flame className="w-4 h-4 fill-black" /> Supermarket Daily Flash Deal
+        <section className="py-10 sm:py-20 bg-gradient-to-br from-amber-500/10 via-zinc-900 to-zinc-950 text-white border-y border-amber-500/20">
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 space-y-6 sm:space-y-12">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-6 border-b border-zinc-800 pb-4 sm:pb-8">
+              <div className="space-y-1 sm:space-y-2">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-amber-500 text-black font-black text-[10px] sm:text-xs uppercase tracking-wider">
+                  <Flame className="w-3.5 h-3.5 fill-black" /> Supermarket Daily Flash Deal
                 </div>
-                <h2 className="text-3xl sm:text-4xl font-black">Limited-Time Organic Offers</h2>
+                <h2 className="text-xl sm:text-4xl font-black">Limited-Time Organic Offers</h2>
               </div>
               <CountdownTimer endsAt={flashSaleEnd} targetDate={flashSaleEnd} />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-6">
               {flashSaleProducts.slice(0, 4).map((product) => (
                 <ProductCard
                   key={product.id}
@@ -288,22 +288,22 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* ===== BEST SELLING PANTRY STAPLES (If Products Exist) ===== */}
+      {/* ===== BEST SELLING PANTRY STAPLES (2-Column Mobile Grid) ===== */}
       {storeProducts.length > 0 && (
-        <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div className="space-y-1">
-              <span className="text-xs font-black uppercase tracking-wider text-amber-500">Customer Favorites</span>
-              <h2 className="text-3xl sm:text-4xl font-black text-zinc-900 dark:text-white">
+        <section className="py-10 sm:py-20 max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 space-y-6 sm:space-y-12">
+          <div className="flex items-end justify-between gap-4">
+            <div className="space-y-0.5">
+              <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-amber-500">Customer Favorites</span>
+              <h2 className="text-xl sm:text-4xl font-black text-zinc-900 dark:text-white">
                 Best Selling Kirana Staples
               </h2>
             </div>
-            <Link href="/shop" className="text-xs font-bold text-amber-500 hover:underline flex items-center gap-1">
-              View All Products ({storeProducts.length}) <ChevronRight className="w-4 h-4" />
+            <Link href="/shop" className="text-xs font-bold text-amber-500 hover:underline flex items-center gap-0.5 flex-shrink-0">
+              View All ({storeProducts.length}) <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-6">
             {featuredProducts.slice(0, 8).map((product) => (
               <ProductCard
                 key={product.id}

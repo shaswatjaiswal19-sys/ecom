@@ -36,6 +36,14 @@ const PAYMENT_OPTIONS: { id: PaymentMethod; label: string; icon: string; descrip
   { id: "COD", label: "Cash on Delivery", icon: "💵", description: "Pay with cash upon delivery at your doorstep" },
 ];
 
+const INDIAN_STATES = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat",
+  "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh",
+  "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab",
+  "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh",
+  "Uttarakhand", "West Bengal", "Delhi NCR", "Chandigarh", "Jammu and Kashmir", "Ladakh"
+];
+
 const GUEST_STEPS = ["Authentication", "Shipping Address", "Payment", "Review Order"];
 const AUTH_STEPS = ["Shipping Address", "Payment", "Review Order"];
 
@@ -195,40 +203,40 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 py-12">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-4xl font-black text-zinc-900 dark:text-white mb-10">Secure Checkout</h1>
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 py-6 sm:py-12 pb-24 lg:pb-12">
+      <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8">
+        <h1 className="text-2xl sm:text-4xl font-black text-zinc-900 dark:text-white mb-4 sm:mb-8">Secure Kirana Checkout</h1>
 
         {/* Progress Steps */}
-        <div className="flex items-center gap-0 mb-10 overflow-x-auto pb-2">
+        <div className="flex items-center gap-0 mb-6 sm:mb-10 overflow-x-auto pb-2 scrollbar-none">
           {(isUserLoggedIn ? AUTH_STEPS : GUEST_STEPS).map((s, i) => {
             const activeStepIdx = isUserLoggedIn ? step - 1 : step;
             const stepsList = isUserLoggedIn ? AUTH_STEPS : GUEST_STEPS;
             return (
-              <div key={s} className="flex items-center">
-                <div className="flex items-center gap-2">
+              <div key={s} className="flex items-center flex-shrink-0">
+                <div className="flex items-center gap-1.5 sm:gap-2">
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black border-2 transition-all ${
+                    className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[11px] sm:text-xs font-black border-2 transition-all ${
                       i < activeStepIdx
                         ? "border-emerald-500 bg-emerald-500 text-white"
                         : i === activeStepIdx
-                        ? "border-amber-500 bg-amber-500 text-black"
+                        ? "border-amber-500 bg-amber-500 text-black shadow-sm"
                         : "border-zinc-300 dark:border-zinc-700 text-zinc-400"
                     }`}
                   >
-                    {i < activeStepIdx ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
+                    {i < activeStepIdx ? <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : i + 1}
                   </div>
-                  <span className={`text-xs font-bold whitespace-nowrap ${i === activeStepIdx ? "text-zinc-900 dark:text-white" : "text-zinc-400"}`}>
+                  <span className={`text-[11px] sm:text-xs font-bold whitespace-nowrap ${i === activeStepIdx ? "text-zinc-900 dark:text-white" : "text-zinc-400"}`}>
                     {s}
                   </span>
                 </div>
-                {i < stepsList.length - 1 && <ChevronRight className="w-5 h-5 text-zinc-300 dark:text-zinc-700 mx-2 flex-shrink-0" />}
+                {i < stepsList.length - 1 && <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-zinc-300 dark:text-zinc-700 mx-1.5 sm:mx-2 flex-shrink-0" />}
               </div>
             );
           })}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
 
@@ -270,49 +278,135 @@ export default function CheckoutPage() {
 
             {/* STEP 1: Shipping Address */}
             {step === 1 && (
-              <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-black/5 dark:border-white/10 shadow-sm">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-lg font-black text-zinc-900 dark:text-white flex items-center gap-2">
+              <div className="bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-3xl p-4 sm:p-8 border border-black/5 dark:border-white/10 shadow-sm">
+                <div className="flex items-center justify-between mb-5 sm:mb-6">
+                  <h2 className="text-base sm:text-lg font-black text-zinc-900 dark:text-white flex items-center gap-2">
                     <MapPin className="w-5 h-5 text-amber-500" /> Shipping Address
                   </h2>
                   {clerkUser && (
-                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full">
-                      ✓ Signed in as {clerkUser.fullName || clerkUser.firstName || "Customer"}
+                    <span className="text-[11px] sm:text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full">
+                      ✓ {clerkUser.fullName || clerkUser.firstName || "Signed In"}
                     </span>
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[
-                    { name: "fullName", label: "Full Name", placeholder: "Your full name", col: 1 },
-                    { name: "phone", label: "Mobile Number", placeholder: "+91 98765 43210", col: 1 },
-                    { name: "streetAddress", label: "Street Address", placeholder: "Flat / House No, Building, Street", col: 2 },
-                    { name: "city", label: "City", placeholder: "City", col: 1 },
-                    { name: "state", label: "State", placeholder: "State", col: 1 },
-                    { name: "pincode", label: "PIN Code", placeholder: "110001", col: 1 },
-                    { name: "country", label: "Country", placeholder: "India", col: 1 },
-                  ].map((field) => (
-                    <div key={field.name} className={field.col === 2 ? "md:col-span-2" : ""}>
-                      <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1.5 uppercase tracking-wider">
-                        {field.label}
-                      </label>
-                      <input
-                        {...form.register(field.name as keyof AddressForm)}
-                        placeholder={field.placeholder}
-                        className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-sm outline-none focus:border-amber-500 transition-colors text-zinc-900 dark:text-white"
-                      />
-                      {form.formState.errors[field.name as keyof AddressForm] && (
-                        <p className="text-xs text-rose-500 mt-1">
-                          {form.formState.errors[field.name as keyof AddressForm]?.message}
-                        </p>
-                      )}
-                    </div>
-                  ))}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
+                  {/* Full Name */}
+                  <div>
+                    <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1 uppercase tracking-wider">
+                      Full Name *
+                    </label>
+                    <input
+                      {...form.register("fullName")}
+                      placeholder="e.g. Ramesh Sharma"
+                      className="w-full px-4 py-3 min-h-[46px] rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-sm outline-none focus:border-amber-500 transition-colors text-zinc-900 dark:text-white"
+                    />
+                    {form.formState.errors.fullName && (
+                      <p className="text-xs text-rose-500 mt-1">{form.formState.errors.fullName.message}</p>
+                    )}
+                  </div>
+
+                  {/* Phone */}
+                  <div>
+                    <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1 uppercase tracking-wider">
+                      Mobile Number (For Delivery OTP) *
+                    </label>
+                    <input
+                      {...form.register("phone")}
+                      type="tel"
+                      placeholder="e.g. 9876543210"
+                      className="w-full px-4 py-3 min-h-[46px] rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-sm outline-none focus:border-amber-500 transition-colors text-zinc-900 dark:text-white"
+                    />
+                    {form.formState.errors.phone && (
+                      <p className="text-xs text-rose-500 mt-1">{form.formState.errors.phone.message}</p>
+                    )}
+                  </div>
+
+                  {/* Street Address */}
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1 uppercase tracking-wider">
+                      House No, Building, Street Address *
+                    </label>
+                    <input
+                      {...form.register("streetAddress")}
+                      placeholder="e.g. Flat 402, Shanti Heights, MG Road"
+                      className="w-full px-4 py-3 min-h-[46px] rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-sm outline-none focus:border-amber-500 transition-colors text-zinc-900 dark:text-white"
+                    />
+                    {form.formState.errors.streetAddress && (
+                      <p className="text-xs text-rose-500 mt-1">{form.formState.errors.streetAddress.message}</p>
+                    )}
+                  </div>
+
+                  {/* State (Dropdown Select) */}
+                  <div>
+                    <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1 uppercase tracking-wider">
+                      State / Union Territory *
+                    </label>
+                    <select
+                      {...form.register("state")}
+                      className="w-full px-4 py-3 min-h-[46px] rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-sm outline-none focus:border-amber-500 transition-colors text-zinc-900 dark:text-white"
+                    >
+                      <option value="">Select State</option>
+                      {INDIAN_STATES.map((st) => (
+                        <option key={st} value={st}>
+                          {st}
+                        </option>
+                      ))}
+                    </select>
+                    {form.formState.errors.state && (
+                      <p className="text-xs text-rose-500 mt-1">{form.formState.errors.state.message}</p>
+                    )}
+                  </div>
+
+                  {/* City / District */}
+                  <div>
+                    <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1 uppercase tracking-wider">
+                      City / District *
+                    </label>
+                    <input
+                      {...form.register("city")}
+                      placeholder="e.g. Mumbai, Varanasi, Lucknow"
+                      className="w-full px-4 py-3 min-h-[46px] rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-sm outline-none focus:border-amber-500 transition-colors text-zinc-900 dark:text-white"
+                    />
+                    {form.formState.errors.city && (
+                      <p className="text-xs text-rose-500 mt-1">{form.formState.errors.city.message}</p>
+                    )}
+                  </div>
+
+                  {/* PIN Code */}
+                  <div>
+                    <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1 uppercase tracking-wider">
+                      6-Digit PIN Code *
+                    </label>
+                    <input
+                      {...form.register("pincode")}
+                      type="text"
+                      maxLength={6}
+                      placeholder="e.g. 221001"
+                      className="w-full px-4 py-3 min-h-[46px] rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-sm outline-none focus:border-amber-500 transition-colors text-zinc-900 dark:text-white"
+                    />
+                    {form.formState.errors.pincode && (
+                      <p className="text-xs text-rose-500 mt-1">{form.formState.errors.pincode.message}</p>
+                    )}
+                  </div>
+
+                  {/* Country */}
+                  <div>
+                    <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1 uppercase tracking-wider">
+                      Country
+                    </label>
+                    <input
+                      {...form.register("country")}
+                      disabled
+                      value="India"
+                      className="w-full px-4 py-3 min-h-[46px] rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 text-sm outline-none text-zinc-500 cursor-not-allowed"
+                    />
+                  </div>
                 </div>
 
                 <button
                   onClick={() => form.handleSubmit(() => setStep(2))()}
-                  className="mt-6 w-full py-4 rounded-2xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 font-bold text-sm hover:bg-amber-500 hover:text-black transition-all flex items-center justify-center gap-2"
+                  className="mt-6 w-full py-3.5 sm:py-4 rounded-2xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 font-bold text-sm hover:bg-amber-500 hover:text-black transition-all flex items-center justify-center gap-2 active:scale-98"
                 >
                   Continue to Payment <ArrowRight className="w-4 h-4" />
                 </button>

@@ -22,46 +22,46 @@ export default function Footer() {
   };
 
   return (
-    <footer className="bg-zinc-950 text-white pt-20 pb-28 lg:pb-12 border-t border-zinc-800">
+    <footer className="bg-zinc-950 text-white pt-10 sm:pt-20 pb-24 lg:pb-12 border-t border-zinc-800">
       {/* Value Proposition Badges */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 grid grid-cols-2 md:grid-cols-4 gap-8 border-b border-zinc-800">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-            <Truck className="w-6 h-6" />
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pb-10 sm:pb-16 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 border-b border-zinc-800">
+        <div className="flex items-center gap-2.5 sm:gap-4">
+          <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 flex-shrink-0">
+            <Truck className="w-4 h-4 sm:w-6 sm:h-6" />
           </div>
           <div>
-            <h4 className="text-sm font-bold">24-Hour Express Grocery</h4>
-            <p className="text-xs text-zinc-400">Cold-chain insulated shipping</p>
+            <h4 className="text-xs sm:text-sm font-bold leading-tight">24-Hr Express</h4>
+            <p className="text-[10px] sm:text-xs text-zinc-400">Cold-chain shipping</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-            <ShieldCheck className="w-6 h-6" />
+        <div className="flex items-center gap-2.5 sm:gap-4">
+          <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 flex-shrink-0">
+            <ShieldCheck className="w-4 h-4 sm:w-6 sm:h-6" />
           </div>
           <div>
-            <h4 className="text-sm font-bold">100% Certified Organic</h4>
-            <p className="text-xs text-zinc-400">Direct farm-to-doorstep purity</p>
+            <h4 className="text-xs sm:text-sm font-bold leading-tight">100% Pure</h4>
+            <p className="text-[10px] sm:text-xs text-zinc-400">Direct farm organic</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-            <RefreshCw className="w-6 h-6" />
+        <div className="flex items-center gap-2.5 sm:gap-4">
+          <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 flex-shrink-0">
+            <RefreshCw className="w-4 h-4 sm:w-6 sm:h-6" />
           </div>
           <div>
-            <h4 className="text-sm font-bold">Easy Fresh Returns</h4>
-            <p className="text-xs text-zinc-400">7-Day quality guarantee</p>
+            <h4 className="text-xs sm:text-sm font-bold leading-tight">Easy Returns</h4>
+            <p className="text-[10px] sm:text-xs text-zinc-400">7-Day refund guarantee</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-            <Award className="w-6 h-6" />
+        <div className="flex items-center gap-2.5 sm:gap-4">
+          <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 flex-shrink-0">
+            <Award className="w-4 h-4 sm:w-6 sm:h-6" />
           </div>
           <div>
-            <h4 className="text-sm font-bold">Trusted Since 1999</h4>
-            <p className="text-xs text-zinc-400">500,000+ satisfied families</p>
+            <h4 className="text-xs sm:text-sm font-bold leading-tight">Since 1999</h4>
+            <p className="text-[10px] sm:text-xs text-zinc-400">500K+ happy homes</p>
           </div>
         </div>
       </div>
