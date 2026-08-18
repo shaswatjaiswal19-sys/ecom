@@ -94,6 +94,11 @@ function ProductDetailContent({ slug }: { slug: string }) {
   const isWishlisted = isInWishlist(product.id);
   const discount = Math.round(((currentMrp - currentPrice) / currentMrp) * 100);
 
+  const currentWeightStock = selectedWeight
+    ? Number(selectedWeight.stock ?? 0)
+    : Number(product.stock ?? 0);
+  const isWeightInStock = currentWeightStock > 0;
+
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-950 py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -339,70 +344,58 @@ function ProductDetailContent({ slug }: { slug: string }) {
             )}
 
             {/* Quantity Selector */}
-            {(() => {
-              const currentWeightStock = selectedWeight
-                ? Number(selectedWeight.stock ?? 0)
-                : Number(product.stock ?? 0);
-              const isWeightInStock = currentWeightStock > 0;
+            <div className="flex items-center gap-4">
+              <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">Qty:</label>
+              <div className="flex items-center gap-2 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-2 bg-white dark:bg-zinc-900">
+                <button
+                  disabled={quantity <= 1 || !isWeightInStock}
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="text-zinc-500 hover:text-black dark:hover:text-white transition-colors font-bold text-lg w-5 disabled:opacity-40"
+                >
+                  −
+                </button>
+                <span className="font-black text-zinc-900 dark:text-white w-8 text-center tabular-nums">
+                  {isWeightInStock ? quantity : 0}
+                </span>
+                <button
+                  disabled={quantity >= currentWeightStock || !isWeightInStock}
+                  onClick={() => setQuantity(Math.min(currentWeightStock, quantity + 1))}
+                  className="text-zinc-500 hover:text-black dark:hover:text-white transition-colors font-bold text-lg w-5 disabled:opacity-40"
+                >
+                  +
+                </button>
+              </div>
+            </div>
 
-              return (
-                <>
-                  <div className="flex items-center gap-4">
-                    <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">Qty:</label>
-                    <div className="flex items-center gap-2 border border-zinc-200 dark:border-zinc-800 rounded-xl px-4 py-2 bg-white dark:bg-zinc-900">
-                      <button
-                        disabled={quantity <= 1 || !isWeightInStock}
-                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                        className="text-zinc-500 hover:text-black dark:hover:text-white transition-colors font-bold text-lg w-5 disabled:opacity-40"
-                      >
-                        −
-                      </button>
-                      <span className="font-black text-zinc-900 dark:text-white w-8 text-center tabular-nums">
-                        {isWeightInStock ? quantity : 0}
-                      </span>
-                      <button
-                        disabled={quantity >= currentWeightStock || !isWeightInStock}
-                        onClick={() => setQuantity(Math.min(currentWeightStock, quantity + 1))}
-                        className="text-zinc-500 hover:text-black dark:hover:text-white transition-colors font-bold text-lg w-5 disabled:opacity-40"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* CTA Buttons */}
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => {
-                        addToCart(product, quantity, selectedVariant, selectedWeight);
-                        toast.success(`Added ${quantity} × ${product.name} ${selectedWeight ? `(${selectedWeight.weight})` : ""} to Cart! 🎉`);
-                      }}
-                      disabled={!isWeightInStock || currentWeightStock <= 0}
-                      className="flex-1 py-4 rounded-2xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 font-bold text-sm hover:bg-amber-500 hover:text-black dark:hover:bg-amber-400 dark:hover:text-black transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      <ShoppingBag className="w-5 h-5" />
-                      {isWeightInStock
-                        ? `Add to Cart • ${formatCurrency(currentPrice * quantity)}`
-                        : `Out of Stock for ${selectedWeight?.weight || "this weight"}`}
-                    </button>
-                    <button
-                      onClick={() => {
-                        toggleWishlist(product);
-                        toast.success(isWishlisted ? "Removed from Wishlist" : "Saved to Wishlist ❤️");
-                      }}
-                      className={`p-4 rounded-2xl border-2 transition-all ${
-                        isWishlisted
-                          ? "border-rose-500 bg-rose-500/10 text-rose-500"
-                          : "border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-rose-500 hover:text-rose-500"
-                      }`}
-                      title="Add to Wishlist"
-                    >
-                      <Heart className={`w-5 h-5 ${isWishlisted ? "fill-rose-500" : ""}`} />
-                    </button>
-                  </div>
-                </>
-              );
-            })()}
+            {/* CTA Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  addToCart(product, quantity, selectedVariant, selectedWeight);
+                  toast.success(`Added ${quantity} × ${product.name} ${selectedWeight ? `(${selectedWeight.weight})` : ""} to Cart! 🎉`);
+                }}
+                disabled={!isWeightInStock || currentWeightStock <= 0}
+                className="flex-1 py-4 rounded-2xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 font-bold text-sm hover:bg-amber-500 hover:text-black dark:hover:bg-amber-400 dark:hover:text-black transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ShoppingBag className="w-5 h-5" />
+                {isWeightInStock
+                  ? `Add to Cart • ${formatCurrency(currentPrice * quantity)}`
+                  : `Out of Stock for ${selectedWeight?.weight || "this weight"}`}
+              </button>
+              <button
+                onClick={() => {
+                  toggleWishlist(product);
+                  toast.success(isWishlisted ? "Removed from Wishlist" : "Saved to Wishlist ❤️");
+                }}
+                className={`p-4 rounded-2xl border-2 transition-all ${
+                  isWishlisted
+                    ? "border-rose-500 bg-rose-500/10 text-rose-500"
+                    : "border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-rose-500 hover:text-rose-500"
+                }`}
+                title="Add to Wishlist"
+              >
+                <Heart className={`w-5 h-5 ${isWishlisted ? "fill-rose-500" : ""}`} />
+              </button>
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(window.location.href);
