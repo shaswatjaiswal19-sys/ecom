@@ -106,11 +106,20 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
             {product.category}
           </span>
           <div className="flex items-center gap-1.5">
-            {product.weight && (
+            {product.weightOptions && product.weightOptions.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => onQuickView && onQuickView(product)}
+                className="text-[10px] font-extrabold bg-amber-500/10 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-md border border-amber-500/20 hover:bg-amber-500 hover:text-black transition-colors"
+                title="Click to select weight in popup"
+              >
+                {product.weightOptions.length} Sizes
+              </button>
+            ) : product.weight ? (
               <span className="text-[10px] font-extrabold bg-amber-500/10 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-md border border-amber-500/20">
                 {product.weight}
               </span>
-            )}
+            ) : null}
             <div className="flex items-center gap-1 text-amber-400 text-xs font-bold">
               <Star className="w-3.5 h-3.5 fill-amber-400" />
               <span>{product.rating}</span>
@@ -133,11 +142,19 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
           <div>
             <div className="flex items-baseline gap-2">
               <span className="text-base font-extrabold text-zinc-900 dark:text-zinc-100">
-                {formatCurrency(product.price)}
+                {formatCurrency(
+                  product.weightOptions && product.weightOptions.length > 0
+                    ? product.weightOptions[0].price
+                    : product.price
+                )}
               </span>
               {product.mrp > product.price && (
                 <span className="text-xs text-zinc-400 line-through">
-                  {formatCurrency(product.mrp)}
+                  {formatCurrency(
+                    product.weightOptions && product.weightOptions.length > 0 && product.weightOptions[0].mrp
+                      ? product.weightOptions[0].mrp
+                      : product.mrp
+                  )}
                 </span>
               )}
             </div>
@@ -146,11 +163,16 @@ export default function ProductCard({ product, onQuickView }: ProductCardProps) 
 
           <button
             onClick={() => {
-              addToCart(product);
-              toast.success("Added to Cart!");
+              if (product.weightOptions && product.weightOptions.length > 1 && onQuickView) {
+                onQuickView(product);
+              } else {
+                const defaultWeight = product.weightOptions?.[0];
+                addToCart(product, 1, undefined, defaultWeight);
+                toast.success(`Added to Cart! ${defaultWeight ? `(${defaultWeight.weight})` : ""}`);
+              }
             }}
             className="p-2.5 rounded-xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 hover:bg-amber-500 hover:text-black dark:hover:bg-amber-400 transition-all shadow-sm"
-            title="Add to Cart"
+            title={product.weightOptions && product.weightOptions.length > 1 ? "Select Weight" : "Add to Cart"}
           >
             <ShoppingBag className="w-4 h-4" />
           </button>

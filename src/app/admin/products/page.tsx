@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useProductStore, useCategoryStore, useBrandStore } from "@/lib/store";
 import { formatCurrency } from "@/lib/utils";
-import { Product } from "@/types";
+import { Product, ProductWeightOption } from "@/types";
 import { db } from "@/lib/firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 import {
@@ -31,12 +31,23 @@ import {
   LayoutGrid,
   Table as TableIcon,
   ExternalLink,
+  Layers,
+  PlusCircle,
+  PackageCheck,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import toast from "react-hot-toast";
 
-import { GROCERY_CATEGORIES, GROCERY_BRANDS, GROCERY_UNITS } from '@/lib/constants/grocery';
+import {
+  GROCERY_CATEGORIES,
+  GROCERY_BRANDS,
+  GROCERY_UNITS,
+  STANDARD_GRAMS_PRESETS,
+  LIQUID_VOLUME_PRESETS,
+  BULK_STAPLE_PRESETS,
+  WeightPreset,
+} from "@/lib/constants/grocery";
 
 export default function AdminProductsPage() {
   const { products, setProducts, addProduct, updateProduct, deleteProduct, resetProducts } = useProductStore();
@@ -124,6 +135,7 @@ export default function AdminProductsPage() {
     stock: number;
     unit: string;
     weight: string;
+    weightOptions: ProductWeightOption[];
     sku: string;
     gstPercentage: number;
     images: string[];
@@ -142,6 +154,7 @@ export default function AdminProductsPage() {
     stock: 10,
     unit: "kg",
     weight: "1 kg",
+    weightOptions: [],
     sku: "",
     gstPercentage: 5,
     images: [
@@ -175,6 +188,13 @@ export default function AdminProductsPage() {
       stock: 50,
       unit: "kg",
       weight: "1 kg",
+      weightOptions: STANDARD_GRAMS_PRESETS.map((preset) => ({
+        id: `wt-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+        weight: preset.weight,
+        price: Math.round(299 * preset.factor),
+        mrp: Math.round(399 * preset.factor),
+        stock: 50,
+      })),
       sku: `SKU-MT-${Math.floor(1000 + Math.random() * 9000)}`,
       gstPercentage: 5,
       images: [
@@ -202,6 +222,7 @@ export default function AdminProductsPage() {
       stock: product.stock,
       unit: product.unit || (product.weight ? product.weight.split(" ")[1] || "kg" : "kg"),
       weight: product.weight || "1 kg",
+      weightOptions: product.weightOptions ? [...product.weightOptions] : [],
       sku: product.sku,
       gstPercentage: product.gstPercentage || 5,
       images: product.images.length > 0 ? [...product.images] : [
@@ -248,6 +269,73 @@ export default function AdminProductsPage() {
     }));
   };
 
+  // Add a new custom weight option
+  const handleAddWeightOption = () => {
+    const newOpt: ProductWeightOption = {
+      id: `wt-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      weight: "250 grams",
+      price: formData.price || 100,
+      mrp: formData.mrp || Math.round((formData.price || 100) * 1.25),
+      stock: formData.stock || 50,
+    };
+    setFormData((prev) => ({
+      ...prev,
+      weightOptions: [...prev.weightOptions, newOpt],
+    }));
+    toast.success("Added new weight option row");
+  };
+
+  // Remove a weight option
+  const handleRemoveWeightOption = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      weightOptions: prev.weightOptions.filter((_, i) => i !== index),
+    }));
+  };
+
+  // Update a field on a specific weight option
+  const handleUpdateWeightOption = (
+    index: number,
+    field: keyof ProductWeightOption,
+    value: string | number
+  ) => {
+    setFormData((prev) => {
+      const updated = [...prev.weightOptions];
+      updated[index] = {
+        ...updated[index],
+        [field]: value,
+      };
+      return { ...prev, weightOptions: updated };
+    });
+  };
+
+  // Apply a batch preset list (e.g. Standard Grams 25g..1kg)
+  const handleApplyWeightPresets = (presets: WeightPreset[]) => {
+    const basePrice = formData.price || 299;
+    const baseMrp = formData.mrp || Math.round(basePrice * 1.25);
+    const generated: ProductWeightOption[] = presets.map((p) => ({
+      id: `wt-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+      weight: p.weight,
+      price: Math.max(1, Math.round(basePrice * p.factor)),
+      mrp: Math.max(1, Math.round(baseMrp * p.factor)),
+      stock: formData.stock || 50,
+    }));
+    setFormData((prev) => ({
+      ...prev,
+      weightOptions: generated,
+    }));
+    toast.success(`Applied ${presets.length} weight presets based on selling price! 🎉`);
+  };
+
+  // Clear all weight options
+  const handleClearAllWeights = () => {
+    setFormData((prev) => ({
+      ...prev,
+      weightOptions: [],
+    }));
+    toast.success("Cleared weight options");
+  };
+
   // Save product (Add or Edit)
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -275,6 +363,7 @@ export default function AdminProductsPage() {
           stock: Number(formData.stock),
           unit: formData.unit || "kg",
           weight: formData.weight || `1 ${formData.unit || "kg"}`,
+          weightOptions: formData.weightOptions,
           sku: formData.sku,
           gstPercentage: Number(formData.gstPercentage),
           images: formData.images,
@@ -316,6 +405,7 @@ export default function AdminProductsPage() {
         unit: formData.unit || "kg",
         inStock: formData.stock > 0 && formData.inStock,
         weight: formData.weight || `1 ${formData.unit || "kg"}`,
+        weightOptions: formData.weightOptions,
         dimensions: "15x10x20 cm",
         images: formData.images,
         rating: 5.0,
@@ -483,6 +573,15 @@ export default function AdminProductsPage() {
                       <span className="font-mono text-[10px] text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md">
                         SKU: {p.sku}
                       </span>
+                      {p.weightOptions && p.weightOptions.length > 0 && (
+                        <>
+                          <span className="text-zinc-400">•</span>
+                          <span className="bg-amber-500/10 text-amber-700 dark:text-amber-300 font-extrabold text-[10px] px-2 py-0.5 rounded-full border border-amber-500/20 flex items-center gap-1">
+                            <PackageCheck className="w-3 h-3 text-amber-500" />
+                            {p.weightOptions.length} Weights
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -917,6 +1016,144 @@ export default function AdminProductsPage() {
                   <span className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1 block">
                     Shown on customer product cards, product details, cart, and checkout.
                   </span>
+                </div>
+              </div>
+
+              {/* Dynamic Weight & Quantity Options Section (For Popup & Store) */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent border-2 border-amber-500/30 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-amber-500/20">
+                  <div>
+                    <h3 className="text-sm font-black text-zinc-900 dark:text-white flex items-center gap-2">
+                      <PackageCheck className="w-4 h-4 text-amber-500" />
+                      Dynamic Weight / Pack Size Options
+                    </h3>
+                    <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
+                      Configure custom weights (e.g. 25g, 50g, 100g, 200g, 500g, 1kg) and prices shown directly in the customer popup.
+                    </p>
+                  </div>
+
+                  {/* Preset Buttons */}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleApplyWeightPresets(STANDARD_GRAMS_PRESETS)}
+                      className="px-2.5 py-1.5 rounded-lg bg-amber-500 text-black text-[10px] font-extrabold hover:bg-amber-400 transition-colors shadow-sm flex items-center gap-1"
+                      title="Add 25g, 50g, 100g, 200g, 500g, 1kg presets"
+                    >
+                      ⚡ Standard Grams (25g - 1kg)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleApplyWeightPresets(LIQUID_VOLUME_PRESETS)}
+                      className="px-2.5 py-1.5 rounded-lg bg-zinc-800 text-amber-400 border border-amber-500/30 text-[10px] font-bold hover:bg-zinc-700 transition-colors"
+                      title="Add 100ml, 250ml, 500ml, 1L, 5L presets"
+                    >
+                      💧 Liquids / Litres
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleApplyWeightPresets(BULK_STAPLE_PRESETS)}
+                      className="px-2.5 py-1.5 rounded-lg bg-zinc-800 text-amber-400 border border-amber-500/30 text-[10px] font-bold hover:bg-zinc-700 transition-colors"
+                      title="Add 1kg, 2kg, 5kg, 10kg, 25kg bulk presets"
+                    >
+                      🌾 Bulk Grains
+                    </button>
+                    {formData.weightOptions.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleClearAllWeights}
+                        className="px-2 py-1.5 rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white text-[10px] font-bold transition-colors"
+                      >
+                        Clear All
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Weight Options Rows */}
+                {formData.weightOptions.length === 0 ? (
+                  <div className="p-4 rounded-xl bg-white/60 dark:bg-zinc-800/60 border border-dashed border-amber-500/30 text-center space-y-2">
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      No custom weight options configured for this product. Customers will buy at the single base weight ({formData.weight}).
+                    </p>
+                    <div className="flex justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleApplyWeightPresets(STANDARD_GRAMS_PRESETS)}
+                        className="text-xs font-bold text-amber-600 dark:text-amber-400 underline hover:text-amber-500"
+                      >
+                        Click here to apply standard 25g, 50g, 100g, 200g, 500g, 1kg options
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                    <div className="grid grid-cols-12 gap-2 text-[10px] font-bold text-zinc-500 uppercase px-2">
+                      <div className="col-span-4 sm:col-span-4">Weight / Size Label *</div>
+                      <div className="col-span-3 sm:col-span-3">Selling Price (₹) *</div>
+                      <div className="col-span-3 sm:col-span-3">MRP (₹)</div>
+                      <div className="col-span-2 sm:col-span-2 text-right">Action</div>
+                    </div>
+                    {formData.weightOptions.map((opt, idx) => (
+                      <div
+                        key={opt.id || idx}
+                        className="grid grid-cols-12 gap-2 items-center bg-white dark:bg-zinc-800 p-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 shadow-sm"
+                      >
+                        <div className="col-span-4 sm:col-span-4">
+                          <input
+                            type="text"
+                            required
+                            placeholder="e.g. 500 grams (Half Kg)"
+                            value={opt.weight}
+                            onChange={(e) => handleUpdateWeightOption(idx, "weight", e.target.value)}
+                            className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-xs text-zinc-900 dark:text-white font-bold outline-none focus:border-amber-500"
+                          />
+                        </div>
+                        <div className="col-span-3 sm:col-span-3">
+                          <input
+                            type="number"
+                            required
+                            min={1}
+                            placeholder="Price"
+                            value={opt.price}
+                            onChange={(e) => handleUpdateWeightOption(idx, "price", Number(e.target.value))}
+                            className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-xs text-zinc-900 dark:text-white font-bold outline-none focus:border-amber-500"
+                          />
+                        </div>
+                        <div className="col-span-3 sm:col-span-3">
+                          <input
+                            type="number"
+                            min={1}
+                            placeholder="MRP"
+                            value={opt.mrp || ""}
+                            onChange={(e) => handleUpdateWeightOption(idx, "mrp", Number(e.target.value))}
+                            className="w-full px-3 py-1.5 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 text-xs text-zinc-900 dark:text-white outline-none focus:border-amber-500"
+                          />
+                        </div>
+                        <div className="col-span-2 sm:col-span-2 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveWeightOption(idx)}
+                            className="p-1.5 rounded-lg text-zinc-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+                            title="Delete weight option"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add Custom Weight Button */}
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={handleAddWeightOption}
+                    className="px-4 py-2 rounded-xl bg-white dark:bg-zinc-800 border-2 border-dashed border-amber-500/40 text-xs font-bold text-amber-600 dark:text-amber-400 hover:border-amber-500 hover:bg-amber-500/10 transition-all flex items-center gap-1.5 w-full justify-center"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add Another Weight Option
+                  </button>
                 </div>
               </div>
 

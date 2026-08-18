@@ -244,6 +244,7 @@ export async function createOrderInStore(orderData: Partial<Order>): Promise<Ord
     price: item.price || 0,
     quantity: item.quantity || 1,
     variantName: item.variantName || undefined,
+    selectedWeight: item.selectedWeight || undefined,
   }));
 
   const orderId = orderData.id || `ord-${Date.now()}`;

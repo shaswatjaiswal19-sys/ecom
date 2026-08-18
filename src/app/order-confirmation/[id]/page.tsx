@@ -140,7 +140,13 @@ export default function OrderConfirmationPage({ params }: PageProps) {
                 </div>
                 <div className="flex-1">
                   <p className="text-xs font-bold text-zinc-900 dark:text-white">{item.name}</p>
-                  {item.variantName && <p className="text-[10px] text-zinc-400">{item.variantName}</p>}
+                  {item.selectedWeight ? (
+                    <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded inline-block mt-0.5">
+                      Weight: {item.selectedWeight}
+                    </span>
+                  ) : item.variantName ? (
+                    <p className="text-[10px] text-zinc-400">{item.variantName}</p>
+                  ) : null}
                   <p className="text-[10px] text-zinc-500">Qty: {item.quantity}</p>
                 </div>
                 <span className="text-xs font-black text-amber-600 dark:text-amber-400">

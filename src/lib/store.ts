@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { CartItem, Product, ProductVariant, Order, OrderStatus, Category, Brand } from "@/types";
+import { CartItem, Product, ProductVariant, ProductWeightOption, Order, OrderStatus, Category, Brand } from "@/types";
 import { MOCK_ORDERS, MOCK_BRANDS } from "./mockData";
 
 // SSR-Safe LocalStorage wrapper that prevents hydration crashes and ensures persistence
@@ -36,9 +36,9 @@ interface CartState {
   isCartOpen: boolean;
   couponCode: string | null;
   discountAmount: number;
-  addToCart: (product: Product, quantity?: number, variant?: ProductVariant) => void;
-  removeFromCart: (productId: string, variantId?: string) => void;
-  updateQuantity: (productId: string, quantity: number, variantId?: string) => void;
+  addToCart: (product: Product, quantity?: number, variant?: ProductVariant, weight?: ProductWeightOption) => void;
+  removeFromCart: (productId: string, variantId?: string, weightId?: string) => void;
+  updateQuantity: (productId: string, quantity: number, variantId?: string, weightId?: string) => void;
   clearCart: () => void;
   toggleCartDrawer: (open?: boolean) => void;
   applyCoupon: (code: string) => { success: boolean; message: string };
@@ -54,12 +54,13 @@ export const useCartStore = create<CartState>()(
       couponCode: null,
       discountAmount: 0,
 
-      addToCart: (product, quantity = 1, variant) => {
+      addToCart: (product, quantity = 1, variant, weight) => {
         set((state) => {
           const existingIndex = state.cart.findIndex(
             (item) =>
               item.product.id === product.id &&
-              (variant ? item.selectedVariant?.id === variant.id : true)
+              (variant ? item.selectedVariant?.id === variant.id : !item.selectedVariant) &&
+              (weight ? (item.selectedWeight?.id === weight.id || item.selectedWeight?.weight === weight.weight) : !item.selectedWeight)
           );
 
           if (existingIndex > -1) {
@@ -68,35 +69,37 @@ export const useCartStore = create<CartState>()(
             return { cart: updated, isCartOpen: true };
           } else {
             return {
-              cart: [...state.cart, { product, quantity, selectedVariant: variant }],
+              cart: [...state.cart, { product, quantity, selectedVariant: variant, selectedWeight: weight }],
               isCartOpen: true,
             };
           }
         });
       },
 
-      removeFromCart: (productId, variantId) => {
+      removeFromCart: (productId, variantId, weightId) => {
         set((state) => ({
           cart: state.cart.filter(
             (item) =>
               !(
                 item.product.id === productId &&
-                (variantId ? item.selectedVariant?.id === variantId : true)
+                (variantId ? item.selectedVariant?.id === variantId : true) &&
+                (weightId ? (item.selectedWeight?.id === weightId || item.selectedWeight?.weight === weightId) : true)
               )
           ),
         }));
       },
 
-      updateQuantity: (productId, quantity, variantId) => {
+      updateQuantity: (productId, quantity, variantId, weightId) => {
         if (quantity <= 0) {
-          get().removeFromCart(productId, variantId);
+          get().removeFromCart(productId, variantId, weightId);
           return;
         }
         set((state) => ({
           cart: state.cart.map((item) => {
             if (
               item.product.id === productId &&
-              (variantId ? item.selectedVariant?.id === variantId : true)
+              (variantId ? item.selectedVariant?.id === variantId : true) &&
+              (weightId ? (item.selectedWeight?.id === weightId || item.selectedWeight?.weight === weightId) : true)
             ) {
               return { ...item, quantity };
             }
@@ -114,7 +117,7 @@ export const useCartStore = create<CartState>()(
         const cleanCode = code.trim().toUpperCase();
         if (cleanCode === "MANOJ10" || cleanCode === "WELCOME10") {
           const subtotal = get().cart.reduce((sum, item) => {
-            const price = item.selectedVariant?.price || item.product.price;
+            const price = item.selectedWeight?.price || item.selectedVariant?.price || item.product.price;
             return sum + price * item.quantity;
           }, 0);
           const discount = Math.round(subtotal * 0.1);
@@ -133,7 +136,7 @@ export const useCartStore = create<CartState>()(
       getCartTotal: () => {
         const cart = get().cart;
         const subtotal = cart.reduce((sum, item) => {
-          const price = item.selectedVariant?.price || item.product.price;
+          const price = item.selectedWeight?.price || item.selectedVariant?.price || item.product.price;
           return sum + price * item.quantity;
         }, 0);
         const discount = get().discountAmount;
@@ -146,7 +149,7 @@ export const useCartStore = create<CartState>()(
       },
     }),
     {
-      name: "manoj-traders-cart-storage",
+      name: "manoj-traders-cart-storage-v2",
       storage: createJSONStorage(() => safeLocalStorage),
     }
   )

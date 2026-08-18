@@ -116,9 +116,10 @@ export default function CheckoutPage() {
           productId: item.product.id,
           name: item.product.name,
           image: item.product.images[0] || "",
-          price: item.selectedVariant?.price || item.product.price,
+          price: item.selectedWeight?.price || item.selectedVariant?.price || item.product.price,
           quantity: item.quantity,
           variantName: item.selectedVariant?.name,
+          selectedWeight: item.selectedWeight?.weight,
         })),
         shippingAddress,
         billingAddress: shippingAddress,
@@ -421,31 +422,38 @@ export default function CheckoutPage() {
                 <h2 className="text-lg font-black text-zinc-900 dark:text-white mb-6">Review Your Order</h2>
 
                 <div className="space-y-3 mb-6">
-                  {cart.map((item, idx) => (
-                    <div key={idx} className="flex gap-3 items-center p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl">
-                      <div className="relative w-14 h-14 rounded-xl overflow-hidden border border-black/5">
-                        <Image src={item.product.images[0]} alt={item.product.name} fill className="object-contain p-1.5" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs font-bold text-zinc-900 dark:text-white line-clamp-1">{item.product.name}</p>
-                        <div className="flex items-center gap-2 text-[10px] text-zinc-400 mt-0.5">
-                          {item.selectedVariant ? (
-                            <span>{item.selectedVariant.name}</span>
-                          ) : item.product.weight ? (
-                            <span className="font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
-                              {item.product.weight}
-                            </span>
-                          ) : null}
-                          <span className="font-semibold text-zinc-700 dark:text-zinc-300">
-                            Qty: {item.quantity} {item.product.unit ? `(${item.product.unit})` : ""}
-                          </span>
+                  {cart.map((item, idx) => {
+                    const price = item.selectedWeight?.price || item.selectedVariant?.price || item.product.price;
+                    return (
+                      <div key={idx} className="flex gap-3 items-center p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl">
+                        <div className="relative w-14 h-14 rounded-xl overflow-hidden border border-black/5">
+                          <Image src={item.product.images[0]} alt={item.product.name} fill className="object-contain p-1.5" />
                         </div>
+                        <div className="flex-1">
+                          <p className="text-xs font-bold text-zinc-900 dark:text-white line-clamp-1">{item.product.name}</p>
+                          <div className="flex items-center gap-2 text-[10px] text-zinc-400 mt-0.5">
+                            {item.selectedWeight ? (
+                              <span className="font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                                {item.selectedWeight.weight}
+                              </span>
+                            ) : item.selectedVariant ? (
+                              <span>{item.selectedVariant.name}</span>
+                            ) : item.product.weight ? (
+                              <span className="font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                                {item.product.weight}
+                              </span>
+                            ) : null}
+                            <span className="font-semibold text-zinc-700 dark:text-zinc-300">
+                              Qty: {item.quantity} {item.product.unit ? `(${item.product.unit})` : ""}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="text-xs font-black text-amber-600 dark:text-amber-400">
+                          {formatCurrency(price * item.quantity)}
+                        </span>
                       </div>
-                      <span className="text-xs font-black text-amber-600 dark:text-amber-400">
-                        {formatCurrency((item.selectedVariant?.price || item.product.price) * item.quantity)}
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Summary info */}

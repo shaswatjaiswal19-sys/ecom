@@ -65,11 +65,12 @@ export default function CartPage() {
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
             {cart.map((item, idx) => {
-              const price = item.selectedVariant?.price || item.product.price;
-              const mrp = item.selectedVariant?.mrp || item.product.mrp;
+              const price = item.selectedWeight?.price || item.selectedVariant?.price || item.product.price;
+              const mrp = item.selectedWeight?.mrp || item.selectedVariant?.mrp || item.product.mrp;
+              const weightId = item.selectedWeight?.id || item.selectedWeight?.weight;
               return (
                 <div
-                  key={`${item.product.id}-${item.selectedVariant?.id || idx}`}
+                  key={`${item.product.id}-${item.selectedVariant?.id || ""}-${weightId || idx}`}
                   className="flex gap-5 p-5 bg-white dark:bg-zinc-900 rounded-3xl border border-black/5 dark:border-white/10 shadow-sm hover:shadow-luxury transition-all group"
                 >
                   {/* Product Image */}
@@ -88,15 +89,20 @@ export default function CartPage() {
                               {item.product.name}
                             </h3>
                           </Link>
-                          {item.selectedVariant ? (
+                          {item.selectedWeight ? (
+                            <span className="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full inline-block mt-1 border border-amber-500/20">
+                              Selected Pack: {item.selectedWeight.weight}
+                            </span>
+                          ) : item.selectedVariant ? (
                             <p className="text-xs text-zinc-400 mt-0.5">Variant: {item.selectedVariant.name}</p>
                           ) : item.product.weight ? (
                             <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold mt-0.5">Pack: {item.product.weight}</p>
                           ) : null}
                         </div>
                         <button
-                          onClick={() => removeFromCart(item.product.id, item.selectedVariant?.id)}
+                          onClick={() => removeFromCart(item.product.id, item.selectedVariant?.id, weightId)}
                           className="text-zinc-300 dark:text-zinc-700 hover:text-rose-500 dark:hover:text-rose-500 transition-colors p-1 flex-shrink-0"
+                          title="Remove item"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -115,14 +121,14 @@ export default function CartPage() {
                       {/* Qty Controller */}
                       <div className="flex items-center gap-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-1.5">
                         <button
-                          onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedVariant?.id)}
+                          onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedVariant?.id, weightId)}
                           className="text-zinc-500 hover:text-black dark:hover:text-white transition-colors"
                         >
                           <Minus className="w-3.5 h-3.5" />
                         </button>
                         <span className="text-sm font-black text-zinc-900 dark:text-white w-6 text-center tabular-nums">{item.quantity}</span>
                         <button
-                          onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedVariant?.id)}
+                          onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedVariant?.id, weightId)}
                           className="text-zinc-500 hover:text-black dark:hover:text-white transition-colors"
                         >
                           <Plus className="w-3.5 h-3.5" />

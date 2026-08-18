@@ -9,10 +9,10 @@ import { useProductStore } from "@/lib/store";
 import { useCartStore, useWishlistStore } from "@/lib/store";
 import { getProductBySlug, getProductsFromStore } from "@/lib/firestore";
 import { formatCurrency } from "@/lib/utils";
-import { Product } from "@/types";
+import { Product, ProductVariant, ProductWeightOption } from "@/types";
 import {
   Star, ShoppingBag, Heart, Share2, Shield, Truck, RefreshCw,
-  ChevronRight, Package, Zap, BarChart3, Info, CheckCircle2, ZoomIn, Loader2
+  ChevronRight, Package, Zap, BarChart3, Info, CheckCircle2, ZoomIn, Loader2, PackageCheck
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -53,9 +53,17 @@ function ProductDetailContent({ slug }: { slug: string }) {
   }, [slug]);
 
   const [selectedImage, setSelectedImage] = useState(0);
-  const [selectedVariant, setSelectedVariant] = useState(product?.variants?.[0]);
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | undefined>(product?.variants?.[0]);
+  const [selectedWeight, setSelectedWeight] = useState<ProductWeightOption | undefined>(product?.weightOptions?.[0]);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<"overview" | "specs" | "reviews" | "360">(initialViewMode);
+
+  useEffect(() => {
+    if (product) {
+      setSelectedVariant(product.variants?.[0]);
+      setSelectedWeight(product.weightOptions?.[0]);
+    }
+  }, [product]);
 
   const { addToCart } = useCartStore();
   const { toggleWishlist, isInWishlist } = useWishlistStore();
@@ -81,9 +89,10 @@ function ProductDetailContent({ slug }: { slug: string }) {
     );
   }
 
-  const currentPrice = selectedVariant?.price || product.price;
+  const currentPrice = selectedWeight?.price ?? selectedVariant?.price ?? product.price;
+  const currentMrp = selectedWeight?.mrp ?? selectedVariant?.mrp ?? product.mrp;
   const isWishlisted = isInWishlist(product.id);
-  const discount = Math.round(((product.mrp - currentPrice) / product.mrp) * 100);
+  const discount = Math.round(((currentMrp - currentPrice) / currentMrp) * 100);
 
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-950 py-12">
@@ -229,6 +238,57 @@ function ProductDetailContent({ slug }: { slug: string }) {
               </div>
             </div>
 
+            {/* Weight / Pack Size Options (Configured in Admin) */}
+            {product.weightOptions && product.weightOptions.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-zinc-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                    <PackageCheck className="w-4 h-4 text-amber-500" />
+                    Select Pack Size / Weight:
+                  </label>
+                  {selectedWeight && (
+                    <span className="text-xs font-bold text-amber-600 dark:text-amber-400">
+                      {selectedWeight.weight}
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  {product.weightOptions.map((opt) => {
+                    const isSelected = selectedWeight?.id === opt.id || selectedWeight?.weight === opt.weight;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setSelectedWeight(opt)}
+                        className={`relative p-3 rounded-2xl text-left border-2 transition-all flex flex-col justify-between ${
+                          isSelected
+                            ? "border-amber-500 bg-amber-500/10 text-amber-900 dark:text-amber-200 shadow-md ring-2 ring-amber-500/20 scale-[1.02]"
+                            : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 bg-zinc-50/50 dark:bg-zinc-900/50 text-zinc-700 dark:text-zinc-300"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-xs font-bold truncate">{opt.weight}</span>
+                          {isSelected && (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                          )}
+                        </div>
+                        <div className="mt-1.5 flex items-baseline gap-1.5">
+                          <span className="text-xs font-black text-zinc-900 dark:text-white">
+                            {formatCurrency(opt.price)}
+                          </span>
+                          {opt.mrp && opt.mrp > opt.price && (
+                            <span className="text-[10px] text-zinc-400 line-through">
+                              {formatCurrency(opt.mrp)}
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Variants */}
             {product.variants && product.variants.length > 0 && (
               <div>
@@ -286,13 +346,13 @@ function ProductDetailContent({ slug }: { slug: string }) {
             <div className="flex gap-3">
               <button
                 onClick={() => {
-                  addToCart(product, quantity, selectedVariant);
-                  toast.success("Added to Cart — Luxury Confirmed! 🎉");
+                  addToCart(product, quantity, selectedVariant, selectedWeight);
+                  toast.success(`Added ${quantity} × ${product.name} ${selectedWeight ? `(${selectedWeight.weight})` : ""} to Cart! 🎉`);
                 }}
                 disabled={!product.inStock}
                 className="flex-1 py-4 rounded-2xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 font-bold text-sm hover:bg-amber-500 hover:text-black dark:hover:bg-amber-400 dark:hover:text-black transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <ShoppingBag className="w-5 h-5" /> Add to Cart
+                <ShoppingBag className="w-5 h-5" /> Add to Cart • {formatCurrency(currentPrice * quantity)}
               </button>
               <button
                 onClick={() => {

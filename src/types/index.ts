@@ -46,6 +46,15 @@ export interface ProductVariant {
   image?: string;
 }
 
+export interface ProductWeightOption {
+  id: string;
+  weight: string; // e.g. "25 grams", "50 grams", "100 grams", "200 grams", "500 grams (Half Kg)", "1 Kg"
+  price: number; // custom price for this weight
+  mrp?: number; // optional custom MRP
+  stock?: number; // optional stock for this weight
+  sku?: string;
+}
+
 export interface ProductSpecification {
   key: string;
   value: string;
@@ -95,6 +104,7 @@ export interface Product {
   unit?: string; // e.g. "kg", "g", "L", "ml", "Pack", "Pcs", "Box", "Dozen", "Units"
   inStock: boolean;
   weight: string; // e.g. "1.5 kg"
+  weightOptions?: ProductWeightOption[]; // Dynamic weight/quantity options configured by admin
   dimensions: string; // e.g. "20x15x5 cm"
   images: string[];
   videoUrl?: string;
@@ -119,6 +129,7 @@ export interface CartItem {
   product: Product;
   quantity: number;
   selectedVariant?: ProductVariant;
+  selectedWeight?: ProductWeightOption;
 }
 
 export interface Address {
@@ -164,6 +175,7 @@ export interface OrderItem {
   price: number;
   quantity: number;
   variantName?: string;
+  selectedWeight?: string;
 }
 
 export interface Order {

@@ -737,9 +737,21 @@ export default function AdminOrdersPage() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <h5 className="text-xs font-bold text-zinc-900 dark:text-white truncate">{item.name}</h5>
-                            <p className="text-[10px] text-zinc-500 font-mono mt-0.5">
-                              Qty: {item.quantity} × {formatCurrency(item.price)}
-                            </p>
+                            <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                              {item.selectedWeight && (
+                                <span className="text-[9px] font-extrabold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                                  {item.selectedWeight}
+                                </span>
+                              )}
+                              {item.variantName && (
+                                <span className="text-[9px] font-semibold text-zinc-500">
+                                  {item.variantName}
+                                </span>
+                              )}
+                              <p className="text-[10px] text-zinc-500 font-mono">
+                                Qty: {item.quantity} × {formatCurrency(item.price)}
+                              </p>
+                            </div>
                           </div>
                           <span className="text-xs font-black text-amber-600 dark:text-amber-400">
                             {formatCurrency(item.price * item.quantity)}

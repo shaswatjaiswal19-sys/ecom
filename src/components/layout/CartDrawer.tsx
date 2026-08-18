@@ -87,10 +87,11 @@ export default function CartDrawer() {
             </div>
           ) : (
             cart.map((item, idx) => {
-              const price = item.selectedVariant?.price || item.product.price;
+              const price = item.selectedWeight?.price || item.selectedVariant?.price || item.product.price;
+              const weightId = item.selectedWeight?.id || item.selectedWeight?.weight;
               return (
                 <div
-                  key={`${item.product.id}-${item.selectedVariant?.id || idx}`}
+                  key={`${item.product.id}-${item.selectedVariant?.id || ""}-${weightId || idx}`}
                   className="flex gap-4 p-3 rounded-2xl border border-zinc-100 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors bg-zinc-50/50 dark:bg-zinc-900/50"
                 >
                   <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-white dark:bg-zinc-800 flex-shrink-0 border border-black/5 dark:border-white/5">
@@ -107,11 +108,15 @@ export default function CartDrawer() {
                       <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 line-clamp-1">
                         {item.product.name}
                       </h4>
-                      {item.selectedVariant && (
+                      {item.selectedWeight ? (
+                        <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full inline-block mt-0.5 border border-amber-500/20">
+                          Weight: {item.selectedWeight.weight}
+                        </span>
+                      ) : item.selectedVariant ? (
                         <span className="text-[10px] text-zinc-500 block">
                           Variant: {item.selectedVariant.name}
                         </span>
-                      )}
+                      ) : null}
                       <span className="text-xs font-bold text-amber-600 dark:text-amber-400 mt-1 block">
                         {formatCurrency(price)}
                       </span>
@@ -124,7 +129,8 @@ export default function CartDrawer() {
                             updateQuantity(
                               item.product.id,
                               item.quantity - 1,
-                              item.selectedVariant?.id
+                              item.selectedVariant?.id,
+                              weightId
                             )
                           }
                           className="text-zinc-500 hover:text-black dark:hover:text-white"
@@ -139,7 +145,8 @@ export default function CartDrawer() {
                             updateQuantity(
                               item.product.id,
                               item.quantity + 1,
-                              item.selectedVariant?.id
+                              item.selectedVariant?.id,
+                              weightId
                             )
                           }
                           className="text-zinc-500 hover:text-black dark:hover:text-white"
@@ -150,7 +157,7 @@ export default function CartDrawer() {
 
                       <button
                         onClick={() =>
-                          removeFromCart(item.product.id, item.selectedVariant?.id)
+                          removeFromCart(item.product.id, item.selectedVariant?.id, weightId)
                         }
                         className="text-rose-500 hover:text-rose-600 p-1"
                         title="Remove item"

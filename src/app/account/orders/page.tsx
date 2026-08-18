@@ -138,9 +138,17 @@ export default function OrdersPage() {
         tags: ["organic", "grocery"],
         createdAt: new Date().toISOString(),
       },
-      1
+      1,
+      undefined,
+      item.selectedWeight
+        ? {
+            id: `wt-${Date.now()}`,
+            weight: item.selectedWeight,
+            price: item.price,
+          }
+        : undefined
     );
-    toast.success(`Re-added "${item.name}" to cart! 🛒`);
+    toast.success(`Re-added "${item.name}"${item.selectedWeight ? ` (${item.selectedWeight})` : ""} to cart! 🛒`);
   };
 
   const handleSubmitCancellation = (e: React.FormEvent) => {
@@ -285,7 +293,13 @@ export default function OrdersPage() {
                         </div>
                         <div>
                           <h4 className="text-sm font-bold text-zinc-900 dark:text-white line-clamp-1">{item.name}</h4>
-                          {item.variantName && <p className="text-xs text-zinc-400 mt-0.5">Variant: {item.variantName}</p>}
+                          {item.selectedWeight ? (
+                            <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full inline-block mt-0.5 border border-amber-500/20">
+                              Weight: {item.selectedWeight}
+                            </span>
+                          ) : item.variantName ? (
+                            <p className="text-xs text-zinc-400 mt-0.5">Variant: {item.variantName}</p>
+                          ) : null}
                           <p className="text-xs font-semibold text-zinc-500 mt-0.5">Qty: {item.quantity} • {formatCurrency(item.price)} each</p>
                         </div>
                       </div>
