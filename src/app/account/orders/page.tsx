@@ -145,6 +145,7 @@ export default function OrdersPage() {
             id: `wt-${Date.now()}`,
             weight: item.selectedWeight,
             price: item.price,
+            stock: 50,
           }
         : undefined
     );
