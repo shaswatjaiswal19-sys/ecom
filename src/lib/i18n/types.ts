@@ -224,6 +224,9 @@ export interface I18nDictionary {
     title: string;
     dashboard: string;
     products: string;
+    categories: string;
+    coupons: string;
+    banners: string;
     addProduct: string;
     editProduct: string;
     inventory: string;

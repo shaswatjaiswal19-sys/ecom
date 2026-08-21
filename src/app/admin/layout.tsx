@@ -30,7 +30,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin/customers", label: dict.admin.customers, icon: Users },
     { href: "/admin/coupons", label: dict.admin.coupons, icon: Ticket },
     { href: "/admin/analytics", label: dict.admin.analytics, icon: BarChart3 },
-    { href: "/admin/banners", label: language === "hi" ? "बैनर" : "Banners", icon: ImageIcon },
+    { href: "/admin/banners", label: dict.admin.banners, icon: ImageIcon },
     { href: "/admin/settings", label: dict.admin.settings, icon: Settings },
   ];
 
