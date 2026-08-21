@@ -11,25 +11,14 @@ const INITIAL_ADDRESSES: Address[] = [
     fullName: "Shaswat Jaiswal",
     phone: "+91 98765 43210",
     streetAddress: "42 Luxury Avenue, Bandra West",
-    city: "Mumbai",
-    state: "Maharashtra",
-    pincode: "400050",
+    city: "chitrakoot",
+    state: "utter pradesh",
+    pincode: "210205",
     country: "India",
     isDefault: true,
     type: "Home",
   },
-  {
-    id: "addr-2",
-    fullName: "Shaswat Jaiswal",
-    phone: "+91 98765 43210",
-    streetAddress: "Tower B, Level 14, Tech Park, Electronic City",
-    city: "Bangalore",
-    state: "Karnataka",
-    pincode: "560100",
-    country: "India",
-    isDefault: false,
-    type: "Work",
-  },
+
 ];
 
 export default function AccountAddressesPage() {
@@ -181,11 +170,10 @@ export default function AccountAddressesPage() {
           {addresses.map((addr) => (
             <div
               key={addr.id}
-              className={`p-6 rounded-2xl border transition-all flex flex-col justify-between ${
-                addr.isDefault
-                  ? "border-amber-500/50 bg-amber-500/5 shadow-md shadow-amber-500/10"
-                  : "border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/50"
-              }`}
+              className={`p-6 rounded-2xl border transition-all flex flex-col justify-between ${addr.isDefault
+                ? "border-amber-500/50 bg-amber-500/5 shadow-md shadow-amber-500/10"
+                : "border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/50"
+                }`}
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">

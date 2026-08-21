@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useCartStore, useWishlistStore } from "@/lib/store";
 import { useTheme } from "@/components/providers/ThemeProvider";
+import { useLanguage } from "@/components/providers/LanguageProvider";
+import LanguageSwitcher from "@/components/common/LanguageSwitcher";
 import {
   ShoppingBag,
   Heart,
@@ -40,6 +42,7 @@ export default function Navbar() {
   const { cart, toggleCartDrawer, getCartTotal } = useCartStore();
   const { wishlist, toggleWishlistDrawer } = useWishlistStore();
   const { theme, setTheme } = useTheme();
+  const { dict } = useLanguage();
 
   const { user: clerkUser } = useUser();
 
@@ -67,16 +70,6 @@ export default function Navbar() {
   return (
     <>
       <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl border-b border-black/5 dark:border-white/10 transition-colors shadow-sm">
-        {/* Top Announcement Bar (Hidden on small mobile screens to save screen height) */}
-        <div className="hidden sm:flex bg-zinc-900 text-white text-[11px] font-medium py-1.5 px-4 text-center items-center justify-center gap-2">
-          <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-          <span>SUPERMARKET OFFER: Use code <strong className="text-amber-300 underline">MANOJ10</strong> for 10% OFF + Free 24-Hour Express Grocery Delivery</span>
-          <span className="hidden md:inline-block text-zinc-400">|</span>
-          <span className="hidden md:inline-flex items-center gap-1 text-emerald-400">
-            <ShieldCheck className="w-3.5 h-3.5" /> 100% Organic & Farm Fresh Guaranteed
-          </span>
-        </div>
-
         {/* Main Header Row */}
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 lg:h-20 flex items-center justify-between gap-3">
           {/* Brand Logo */}
@@ -86,10 +79,10 @@ export default function Navbar() {
             </div>
             <div className="flex flex-col">
               <span className="font-black text-sm lg:text-lg tracking-tight uppercase text-zinc-900 dark:text-white leading-none">
-                MANOJ TRADERS
+                {dict.common.appName}
               </span>
               <span className="hidden sm:inline-block text-[9px] lg:text-[10px] tracking-widest text-emerald-600 dark:text-amber-400 font-bold uppercase mt-0.5">
-                Fresh Groceries. Trusted Service.
+                {dict.common.tagline}
               </span>
             </div>
           </Link>
@@ -97,7 +90,7 @@ export default function Navbar() {
           {/* Desktop Navigation Menu */}
           <nav className="hidden lg:flex items-center gap-7 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
             <Link href="/" prefetch={true} className="hover:text-amber-500 transition-colors">
-              Home
+              {dict.nav.home}
             </Link>
 
             {/* Grocery Aisles Supermarket Catalog */}
@@ -107,14 +100,14 @@ export default function Navbar() {
               className="flex items-center gap-1 hover:text-amber-500 transition-colors py-2"
             >
               <Wheat className="w-4 h-4 text-amber-500" />
-              <span>Grocery Aisles</span>
+              <span>{dict.nav.groceryAisles}</span>
             </Link>
 
             <Link href="/account/orders" prefetch={true} className="hover:text-amber-500 transition-colors flex items-center gap-1 font-bold">
-              <Package className="w-3.5 h-3.5 text-amber-500" /> Orders
+              <Package className="w-3.5 h-3.5 text-amber-500" /> {dict.nav.orders}
             </Link>
             <Link href="/track" prefetch={true} className="hover:text-amber-500 transition-colors flex items-center gap-1">
-              <Truck className="w-3.5 h-3.5 text-amber-500" /> Track Order
+              <Truck className="w-3.5 h-3.5 text-amber-500" /> {dict.nav.trackOrder}
             </Link>
             {isAdmin && (
               <Link
@@ -122,18 +115,21 @@ export default function Navbar() {
                 prefetch={true}
                 className="text-xs px-3 py-1.5 rounded-full bg-amber-500 text-black hover:bg-amber-400 font-bold transition-all shadow-sm flex items-center gap-1"
               >
-                <ShieldCheck className="w-3.5 h-3.5" /> Admin Console
+                <ShieldCheck className="w-3.5 h-3.5" /> {dict.nav.adminConsole}
               </Link>
             )}
           </nav>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-1.5 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2.5">
+            {/* Language Switcher */}
+            <LanguageSwitcher />
+
             {/* Desktop Search Trigger */}
             <button
               onClick={() => setSearchOpen(!searchOpen)}
               className="hidden lg:flex p-2.5 rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-zinc-700 dark:text-zinc-300"
-              title="Search Grocery Items"
+              title={dict.common.search}
               aria-label="Search"
             >
               <Search className="w-5 h-5" />
@@ -143,7 +139,7 @@ export default function Navbar() {
             <button
               onClick={() => toggleWishlistDrawer(true)}
               className="relative p-2 sm:p-2.5 rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-zinc-700 dark:text-zinc-300"
-              title="View Saved Wishlist"
+              title={dict.nav.wishlist}
               aria-label="Wishlist"
             >
               <Heart className="w-5 h-5" />
@@ -158,12 +154,12 @@ export default function Navbar() {
             <button
               onClick={() => toggleCartDrawer(true)}
               className="relative p-2 sm:p-2.5 rounded-2xl bg-amber-500 text-black hover:bg-amber-400 transition-all flex items-center gap-1.5 sm:gap-2 shadow-md font-bold"
-              title="Shopping Cart Drawer"
+              title={dict.nav.cart}
               aria-label="Cart"
             >
               <ShoppingBag className="w-5 h-5" />
               <span className="hidden sm:inline-block text-xs">
-                Cart ({itemCount})
+                {dict.nav.cart} ({itemCount})
               </span>
               {itemCount > 0 && (
                 <span className="sm:hidden absolute -top-1 -right-1 w-4 h-4 bg-black text-amber-400 font-black text-[9px] rounded-full flex items-center justify-center">
@@ -176,7 +172,7 @@ export default function Navbar() {
             <button
               onClick={() => setTheme(theme === "light" ? "dark" : "light")}
               className="p-2 sm:p-2.5 rounded-2xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-zinc-700 dark:text-zinc-300"
-              title="Toggle Light/Dark Theme"
+              title={dict.common.theme}
               aria-label="Toggle Theme"
             >
               {theme === "dark" ? <Sun className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" /> : <Moon className="w-4 h-4 sm:w-5 sm:h-5 text-zinc-800" />}
@@ -190,7 +186,7 @@ export default function Navbar() {
                     href="/account"
                     className="text-xs font-bold text-zinc-700 dark:text-zinc-300 hover:text-amber-500 hidden md:inline-block"
                   >
-                    Account
+                    {dict.nav.account}
                   </Link>
                   <UserButton
                     afterSignOutUrl="/"
@@ -206,7 +202,7 @@ export default function Navbar() {
                   href="/sign-in"
                   className="flex items-center gap-1 text-[11px] sm:text-xs font-bold px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 hover:bg-amber-500 hover:text-black transition-all shadow-sm"
                 >
-                  <User className="w-3.5 h-3.5" /> <span className="hidden xs:inline">Sign In</span>
+                  <User className="w-3.5 h-3.5" /> <span className="hidden xs:inline">{dict.nav.login}</span>
                 </Link>
               )}
             </div>
@@ -222,13 +218,13 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* ALWAYS-VISIBLE MOBILE SEARCH BAR (Flipkart/Amazon style) */}
+        {/* ALWAYS-VISIBLE MOBILE SEARCH BAR */}
         <div className="lg:hidden px-3 pb-2.5 pt-0.5">
           <form onSubmit={handleSearchSubmit} className="relative flex items-center">
             <Search className="absolute left-3.5 w-4 h-4 text-zinc-400 pointer-events-none" />
             <input
               type="text"
-              placeholder="Search 5,000+ groceries, atta, dal, ghee..."
+              placeholder={dict.common.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-16 py-2 rounded-2xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-xs text-zinc-900 dark:text-white placeholder:text-zinc-400 outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20 transition-all shadow-inner"
@@ -246,7 +242,7 @@ export default function Navbar() {
               type="submit"
               className="absolute right-1.5 px-3 py-1 bg-amber-500 text-black text-[11px] font-black uppercase rounded-xl shadow-sm hover:bg-amber-400 transition-colors"
             >
-              Go
+              {dict.common.search}
             </button>
           </form>
         </div>
@@ -258,7 +254,7 @@ export default function Navbar() {
               <Search className="w-5 h-5 text-zinc-400 flex-shrink-0" />
               <input
                 type="text"
-                placeholder="Search fresh mangoes, basmati rice, A2 ghee, spices, staples..."
+                placeholder={dict.common.searchPlaceholder}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-transparent border-none text-base outline-none text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400"
@@ -268,7 +264,7 @@ export default function Navbar() {
                 type="submit"
                 className="px-5 py-2 rounded-xl bg-amber-500 text-black text-xs font-bold hover:bg-amber-400 transition-colors flex-shrink-0"
               >
-                Search
+                {dict.common.search}
               </button>
               <button type="button" onClick={() => setSearchOpen(false)}>
                 <X className="w-5 h-5 text-zinc-400 hover:text-black dark:hover:text-white" />
@@ -280,30 +276,34 @@ export default function Navbar() {
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
           <div className="lg:hidden border-t border-black/5 dark:border-white/10 bg-white dark:bg-zinc-950 p-5 space-y-4 shadow-2xl animate-in slide-in-from-top-2 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-200 dark:border-zinc-800">
+              <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider">{dict.common.language}</span>
+              <LanguageSwitcher />
+            </div>
             <nav className="flex flex-col space-y-2.5 font-bold text-sm text-zinc-900 dark:text-white">
               <Link href="/" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 flex items-center justify-between">
-                <span>🏠 Home</span>
+                <span>🏠 {dict.nav.home}</span>
                 <ChevronDown className="w-4 h-4 -rotate-90 text-zinc-400" />
               </Link>
               <Link href="/shop" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 flex items-center justify-between">
-                <span>🌾 Grocery Catalog</span>
+                <span>🌾 {dict.nav.groceryAisles}</span>
                 <ChevronDown className="w-4 h-4 -rotate-90 text-zinc-400" />
               </Link>
               <Link href="/account/orders" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 flex items-center justify-between">
-                <span>📦 My Orders & Tracking</span>
+                <span>📦 {dict.nav.orders} & {dict.nav.trackOrder}</span>
                 <ChevronDown className="w-4 h-4 -rotate-90 text-zinc-400" />
               </Link>
               <Link href="/about" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 flex items-center justify-between">
-                <span>🌿 About Manoj Traders</span>
+                <span>🌿 {dict.nav.about}</span>
                 <ChevronDown className="w-4 h-4 -rotate-90 text-zinc-400" />
               </Link>
               <Link href="/contact" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-900 flex items-center justify-between">
-                <span>📞 Customer Support</span>
+                <span>📞 {dict.nav.contact}</span>
                 <ChevronDown className="w-4 h-4 -rotate-90 text-zinc-400" />
               </Link>
               {isAdmin && (
                 <Link href="/admin" onClick={() => setMobileMenuOpen(false)} className="px-3 py-2.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-2 font-bold">
-                  <ShieldCheck className="w-4 h-4" /> Admin Console
+                  <ShieldCheck className="w-4 h-4" /> {dict.nav.adminConsole}
                 </Link>
               )}
             </nav>

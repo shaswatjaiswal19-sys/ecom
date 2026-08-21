@@ -48,11 +48,13 @@ import {
   BULK_STAPLE_PRESETS,
   WeightPreset,
 } from "@/lib/constants/grocery";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 
 export default function AdminProductsPage() {
   const { products, setProducts, addProduct, updateProduct, deleteProduct, resetProducts } = useProductStore();
   const { categories: customCategories } = useCategoryStore();
   const { brands: customBrands } = useBrandStore();
+  const { dict, language } = useLanguage();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -125,9 +127,12 @@ export default function AdminProductsPage() {
   // Form State
   const [formData, setFormData] = useState<{
     name: string;
+    nameHi?: string;
     slug: string;
     tagline: string;
+    taglineHi?: string;
     description: string;
+    descriptionHi?: string;
     category: string;
     brand: string;
     price: number;
@@ -144,9 +149,12 @@ export default function AdminProductsPage() {
     inStock: boolean;
   }>({
     name: "",
+    nameHi: "",
     slug: "",
     tagline: "",
+    taglineHi: "",
     description: "",
+    descriptionHi: "",
     category: GROCERY_CATEGORIES[0],
     brand: GROCERY_BRANDS[0],
     price: 0,
@@ -168,7 +176,7 @@ export default function AdminProductsPage() {
   const [imageUrlInput, setImageUrlInput] = useState("");
 
   const filteredProducts = products.filter((p) => {
-    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.sku.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || (p.nameHi && p.nameHi.toLowerCase().includes(searchTerm.toLowerCase())) || p.sku.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCat = categoryFilter === "all" || p.category === categoryFilter;
     return matchesSearch && matchesCat;
   });
@@ -178,9 +186,12 @@ export default function AdminProductsPage() {
     setEditingProductId(null);
     setFormData({
       name: "",
+      nameHi: "",
       slug: "",
       tagline: "100% Farm Fresh & Organic",
+      taglineHi: "100% शुद्ध और जैविक",
       description: "Carefully harvested from certified organic farms with zero chemical pesticides.",
+      descriptionHi: "प्रमाणित जैविक खेतों से बिना किसी रासायनिक कीटनाशक के ताज़ा तैयार।",
       category: GROCERY_CATEGORIES[0],
       brand: GROCERY_BRANDS[0],
       price: 299,
@@ -212,9 +223,12 @@ export default function AdminProductsPage() {
     setEditingProductId(product.id);
     setFormData({
       name: product.name,
+      nameHi: product.nameHi || "",
       slug: product.slug,
       tagline: product.tagline || "",
+      taglineHi: product.taglineHi || "",
       description: product.description || "",
+      descriptionHi: product.descriptionHi || "",
       category: product.category,
       brand: product.brand,
       price: product.price,
@@ -365,9 +379,12 @@ export default function AdminProductsPage() {
         const updatedProduct: Product = {
           ...existingProduct,
           name: formData.name,
+          nameHi: formData.nameHi?.trim() || undefined,
           slug: calculatedSlug,
           tagline: formData.tagline,
+          taglineHi: formData.taglineHi?.trim() || undefined,
           description: formData.description,
+          descriptionHi: formData.descriptionHi?.trim() || undefined,
           category: formData.category,
           brand: formData.brand,
           price: Number(formData.price),
@@ -399,9 +416,12 @@ export default function AdminProductsPage() {
       const newCreatedProduct: Product = {
         id: `prod-${Date.now()}`,
         name: formData.name,
+        nameHi: formData.nameHi?.trim() || undefined,
         slug: calculatedSlug,
         tagline: formData.tagline || "Organic & Farm Fresh",
+        taglineHi: formData.taglineHi?.trim() || undefined,
         description: formData.description || "100% natural, farm-fresh organic grocery product.",
+        descriptionHi: formData.descriptionHi?.trim() || undefined,
         highlights: ["100% Organic Certified", "Farm Direct", "Zero Preservatives"],
         features: ["Freshly Harvested", "Hygienically Packed", "24-Hour Express Delivery"],
         price: Number(formData.price),
@@ -923,7 +943,7 @@ export default function AdminProductsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md overflow-y-auto">
           <div className="relative w-full max-w-3xl bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-black/10 dark:border-white/10 my-8 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             {/* Modal Header */}
-            <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-zinc-50 dark:bg-zinc-850">
+            <div className="p-6 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-zinc-50 dark:bg-zinc-900">
               <div>
                 <h2 className="text-xl font-black text-zinc-900 dark:text-white">
                   {editingProductId ? "Edit Product Details" : "Add New Grocery Product"}
@@ -982,11 +1002,11 @@ export default function AdminProductsPage() {
                 </div>
               </div>
 
-              {/* Title, Tagline & Slug */}
+              {/* Title (English + Hindi) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 block mb-1">
-                    Product Title *
+                    Product Title (English) *
                   </label>
                   <input
                     type="text"
@@ -998,14 +1018,44 @@ export default function AdminProductsPage() {
                   />
                 </div>
                 <div>
+                  <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 block mb-1 flex items-center gap-1.5">
+                    <span>उत्पाद का नाम (Hindi Title)</span>
+                    <span className="text-[10px] text-amber-500 font-normal">(वैकल्पिक / Optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.nameHi || ""}
+                    onChange={(e) => setFormData({ ...formData, nameHi: e.target.value })}
+                    placeholder="उदा. रॉयल बासमती चावल 5 किग्रा"
+                    className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-800 text-xs text-zinc-900 dark:text-white outline-none focus:border-amber-500"
+                  />
+                </div>
+              </div>
+
+              {/* Tagline (English + Hindi) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
                   <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 block mb-1">
-                    Tagline / Subtitle
+                    Tagline / Subtitle (English)
                   </label>
                   <input
                     type="text"
                     value={formData.tagline}
                     onChange={(e) => setFormData({ ...formData, tagline: e.target.value })}
                     placeholder="e.g. Aged 2 Years • Extra Long Grain"
+                    className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-800 text-xs text-zinc-900 dark:text-white outline-none focus:border-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 block mb-1 flex items-center gap-1.5">
+                    <span>टैगलाइन (Hindi Tagline)</span>
+                    <span className="text-[10px] text-amber-500 font-normal">(वैकल्पिक / Optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.taglineHi || ""}
+                    onChange={(e) => setFormData({ ...formData, taglineHi: e.target.value })}
+                    placeholder="उदा. 2 वर्ष पुराना • लंबा दाना"
                     className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-800 text-xs text-zinc-900 dark:text-white outline-none focus:border-amber-500"
                   />
                 </div>
@@ -1297,8 +1347,8 @@ export default function AdminProductsPage() {
                 </div>
               </div>
 
-              {/* SKU & Description */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* SKU & Dual Description (English + Hindi) */}
+              <div className="space-y-4">
                 <div>
                   <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 block mb-1">
                     SKU Code
@@ -1307,19 +1357,35 @@ export default function AdminProductsPage() {
                     type="text"
                     value={formData.sku}
                     onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-800 text-xs text-zinc-900 dark:text-white outline-none font-mono"
+                    className="w-full sm:w-1/2 px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-800 text-xs text-zinc-900 dark:text-white outline-none font-mono"
                   />
                 </div>
-                <div className="sm:col-span-2">
-                  <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 block mb-1">
-                    Product Description
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-800 text-xs text-zinc-900 dark:text-white outline-none focus:border-amber-500 resize-none"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 block mb-1">
+                      Product Description (English)
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="Enter description in English..."
+                      className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-800 text-xs text-zinc-900 dark:text-white outline-none focus:border-amber-500 resize-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 block mb-1 flex items-center gap-1.5">
+                      <span>उत्पाद का विवरण (Hindi Description)</span>
+                      <span className="text-[10px] text-amber-500 font-normal">(वैकल्पिक / Optional)</span>
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={formData.descriptionHi || ""}
+                      onChange={(e) => setFormData({ ...formData, descriptionHi: e.target.value })}
+                      placeholder="हिंदी में विवरण दर्ज करें..."
+                      className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-800 text-xs text-zinc-900 dark:text-white outline-none focus:border-amber-500 resize-none"
+                    />
+                  </div>
                 </div>
               </div>
 

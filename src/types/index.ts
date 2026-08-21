@@ -86,10 +86,15 @@ export interface Product {
   id: string;
   slug: string;
   name: string;
+  nameHi?: string;
   tagline: string;
+  taglineHi?: string;
   description: string;
+  descriptionHi?: string;
   highlights: string[];
+  highlightsHi?: string[];
   features: string[];
+  featuresHi?: string[];
   price: number;
   mrp: number;
   wholesalePrice: number;

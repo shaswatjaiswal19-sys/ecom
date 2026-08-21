@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Product, ProductVariant, ProductWeightOption } from "@/types";
 import { formatCurrency, calculateDiscount } from "@/lib/utils";
 import { useCartStore } from "@/lib/store";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 import { X, Star, ShoppingBag, Check, ShieldCheck, Truck, Plus, Minus, PackageCheck } from "lucide-react";
 import Image from "next/image";
 import toast from "react-hot-toast";
@@ -15,6 +16,9 @@ interface QuickViewModalProps {
 
 export default function QuickViewModal({ product, onClose }: QuickViewModalProps) {
   const { addToCart } = useCartStore();
+  const { dict, getLocalizedProduct, formatWeight, language } = useLanguage();
+  const localized = getLocalizedProduct(product);
+
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | undefined>(
     product?.variants?.[0]
   );
@@ -54,7 +58,7 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
         <button
           onClick={onClose}
           className="absolute top-4 right-4 z-20 p-2.5 rounded-full bg-zinc-100/80 dark:bg-zinc-800/80 backdrop-blur-md text-zinc-600 dark:text-zinc-300 hover:bg-rose-500 hover:text-white transition-all shadow-md active:scale-95 border border-black/5 dark:border-white/5"
-          title="Close Popup"
+          title={dict.common.close}
         >
           <X className="w-4 h-4" />
         </button>
@@ -64,13 +68,13 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
           <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-white/80 dark:bg-zinc-900/80 border border-black/5 dark:border-white/10 mb-4 shadow-inner">
             <Image
               src={selectedImage || product.images?.[0] || defaultPlaceholder}
-              alt={product.name || "Product"}
+              alt={localized.name || "Product"}
               fill
               className="object-contain p-6 hover:scale-105 transition-transform duration-500"
             />
             {discount > 0 && (
               <span className="absolute top-3 left-3 bg-gradient-to-r from-amber-500 to-amber-600 text-black text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow-md shadow-amber-500/20 tracking-wider">
-                -{discount}% OFF
+                -{discount}% {dict.common.off}
               </span>
             )}
           </div>
@@ -94,7 +98,7 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
           <div>
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-extrabold text-amber-500 uppercase tracking-widest bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
-                {product.category}
+                {localized.category}
               </span>
               <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
                 {product.brand}
@@ -102,10 +106,10 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
             </div>
 
             <h2 className="text-xl font-black text-zinc-900 dark:text-zinc-100 mt-2">
-              {product.name}
+              {localized.name}
             </h2>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2 leading-relaxed">
-              {product.description}
+              {localized.tagline || localized.description}
             </p>
 
             <div className="flex items-center gap-2 mt-2.5 text-amber-400 text-xs font-black">
@@ -115,7 +119,7 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
                 ))}
               </div>
               <span className="text-zinc-900 dark:text-zinc-100 text-xs">{product.rating}</span>
-              <span className="text-zinc-400 text-[11px] font-medium">({product.reviewCount} Reviews)</span>
+              <span className="text-zinc-400 text-[11px] font-medium">({product.reviewCount} {dict.product.reviews})</span>
             </div>
 
             {/* WEIGHT / PACK SIZE SELECTION OPTIONS */}
@@ -124,11 +128,11 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-xs font-extrabold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
                     <PackageCheck className="w-3.5 h-3.5 text-amber-500" />
-                    Select Pack Size / Weight:
+                    {dict.product.selectWeight}:
                   </label>
                   {selectedWeight && (
                     <span className={`text-[11px] font-bold ${isWeightInStock ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
-                      {selectedWeight.weight} ({isWeightInStock ? `${currentAvailableStock} available` : "Out of stock"})
+                      {formatWeight(selectedWeight.weight)} ({isWeightInStock ? `${currentAvailableStock} ${dict.common.inStock}` : dict.common.outOfStock})
                     </span>
                   )}
                 </div>
@@ -155,7 +159,7 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
                       >
                         <div className="flex items-center justify-between gap-1">
                           <span className="text-xs font-black truncate">
-                            {opt.weight}
+                            {formatWeight(opt.weight)}
                           </span>
                           {isSelected && (
                             <span className="w-4 h-4 rounded-full bg-amber-500 text-black flex items-center justify-center flex-shrink-0 shadow-xs">
@@ -189,7 +193,7 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
             {product.variants && product.variants.length > 0 && (
               <div className="mt-4 pt-3 border-t border-zinc-100 dark:border-zinc-800">
                 <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-2">
-                  Select Finish / Variant:
+                  {dict.product.weightVariant}:
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {product.variants.map((v) => (
@@ -227,8 +231,8 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
                   : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/25"
               }`}>
                 {isWeightInStock
-                  ? `${selectedWeight?.weight || product.weight} • ${currentAvailableStock} in stock`
-                  : `${selectedWeight?.weight || product.weight} • Out of Stock`}
+                  ? `${formatWeight(selectedWeight?.weight || product.weight)} • ${currentAvailableStock} ${dict.common.inStock}`
+                  : `${formatWeight(selectedWeight?.weight || product.weight)} • ${dict.common.outOfStock}`}
               </span>
             </div>
           </div>
@@ -238,7 +242,7 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
             {/* Quantity Controller */}
             <div className="flex items-center justify-between bg-zinc-50 dark:bg-zinc-800/60 p-2 rounded-2xl border border-zinc-200 dark:border-zinc-800">
               <span className="text-xs font-extrabold text-zinc-700 dark:text-zinc-300 ml-2">
-                Quantity:
+                {dict.product.quantity}:
               </span>
               <div className="flex items-center gap-3">
                 <button
@@ -267,20 +271,20 @@ export default function QuickViewModal({ product, onClose }: QuickViewModalProps
               disabled={!isWeightInStock || currentAvailableStock <= 0}
               onClick={() => {
                 addToCart(product, quantity, selectedVariant, selectedWeight);
-                toast.success(`Added ${quantity} × ${product.name} ${selectedWeight ? `(${selectedWeight.weight})` : ""} to Cart! 🎉`);
+                toast.success(`${dict.product.addedToCart} (${quantity} × ${localized.name} ${selectedWeight ? `[${formatWeight(selectedWeight.weight)}]` : ""})`);
                 onClose();
               }}
               className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 text-black font-black text-xs uppercase tracking-wider hover:from-amber-400 hover:to-amber-500 transition-all shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.99]"
             >
               <ShoppingBag className="w-4 h-4" />
               {isWeightInStock
-                ? `Add to Cart Now • ${formatCurrency(currentPrice * quantity)}`
-                : `Out of Stock for ${selectedWeight?.weight || "this weight"}`}
+                ? `${dict.product.addToCart} • ${formatCurrency(currentPrice * quantity)}`
+                : `${dict.common.outOfStock} (${formatWeight(selectedWeight?.weight || product.weight)})`}
             </button>
 
             <div className="flex justify-around text-[10px] text-zinc-500 font-semibold pt-1">
-              <span className="flex items-center gap-1"><Truck className="w-3.5 h-3.5 text-emerald-500" /> Free Express Delivery</span>
-              <span className="flex items-center gap-1"><ShieldCheck className="w-3.5 h-3.5 text-emerald-500" /> 100% Quality Guaranteed</span>
+              <span className="flex items-center gap-1"><Truck className="w-3.5 h-3.5 text-emerald-500" /> {dict.home.expressDelivery}</span>
+              <span className="flex items-center gap-1"><ShieldCheck className="w-3.5 h-3.5 text-emerald-500" /> {dict.home.freshGuaranteed}</span>
             </div>
           </div>
         </div>

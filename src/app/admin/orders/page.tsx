@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useOrderStore } from "@/lib/store";
 import { Order, OrderStatus } from "@/types";
 import { formatCurrency } from "@/lib/utils";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 import { db } from "@/lib/firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 import { getOrdersFromStore, updateOrderStatusInFirestore } from "@/lib/firestore";
@@ -63,6 +64,7 @@ function getNextAction(status: OrderStatus): { nextStatus: OrderStatus; label: s
 
 export default function AdminOrdersPage() {
   const { orders: rawOrders, setOrders, updateOrderStatus } = useOrderStore();
+  const { dict, formatStatus, formatWeight, language } = useLanguage();
   const [activeTab, setActiveTab] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "cards">("list");

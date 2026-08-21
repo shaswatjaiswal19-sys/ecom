@@ -5,12 +5,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Store, ShoppingBag, Heart, Package, User } from "lucide-react";
 import { useCartStore, useWishlistStore } from "@/lib/store";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 
 export default function MobileNav() {
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const { toggleCartDrawer, getCartTotal } = useCartStore();
   const { wishlist, toggleWishlistDrawer } = useWishlistStore();
+  const { dict } = useLanguage();
   const { itemCount } = getCartTotal();
 
   useEffect(() => {
@@ -45,7 +47,7 @@ export default function MobileNav() {
         <div className={`p-1 rounded-xl transition-colors ${isHome ? "bg-amber-500/15" : ""}`}>
           <Home className="w-5 h-5 stroke-[2.2]" />
         </div>
-        <span className="text-[10px] tracking-tight mt-0.5">Home</span>
+        <span className="text-[10px] tracking-tight mt-0.5">{dict.nav.home}</span>
       </Link>
 
       {/* 2. Categories / Shop */}
@@ -61,7 +63,7 @@ export default function MobileNav() {
         <div className={`p-1 rounded-xl transition-colors ${isShop ? "bg-amber-500/15" : ""}`}>
           <Store className="w-5 h-5 stroke-[2.2]" />
         </div>
-        <span className="text-[10px] tracking-tight mt-0.5">Categories</span>
+        <span className="text-[10px] tracking-tight mt-0.5">{dict.shop.category}</span>
       </Link>
 
       {/* 3. Orders / Tracking */}
@@ -77,7 +79,7 @@ export default function MobileNav() {
         <div className={`p-1 rounded-xl transition-colors ${isOrders ? "bg-amber-500/15" : ""}`}>
           <Package className="w-5 h-5 stroke-[2.2]" />
         </div>
-        <span className="text-[10px] tracking-tight mt-0.5">My Orders</span>
+        <span className="text-[10px] tracking-tight mt-0.5">{dict.nav.orders}</span>
       </Link>
 
       {/* 4. Wishlist Drawer Button */}
@@ -94,7 +96,7 @@ export default function MobileNav() {
             </span>
           )}
         </div>
-        <span className="text-[10px] tracking-tight mt-0.5">Wishlist</span>
+        <span className="text-[10px] tracking-tight mt-0.5">{dict.nav.wishlist}</span>
       </button>
 
       {/* 5. Cart Button */}
@@ -111,7 +113,7 @@ export default function MobileNav() {
             </span>
           )}
         </div>
-        <span className="text-[10px] tracking-tight mt-0.5">Cart</span>
+        <span className="text-[10px] tracking-tight mt-0.5">{dict.nav.cart}</span>
       </button>
     </nav>
   );

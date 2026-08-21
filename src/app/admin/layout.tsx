@@ -9,28 +9,30 @@ import {
   Shield, LogOut, Search, Moon, Sun, Menu, X
 } from "lucide-react";
 import { useTheme } from "@/components/providers/ThemeProvider";
+import { useLanguage } from "@/components/providers/LanguageProvider";
+import LanguageSwitcher from "@/components/common/LanguageSwitcher";
 import { SignedIn, UserButton, useUser, SignInButton } from "@clerk/nextjs";
 import { ShieldAlert, ArrowLeft, Lock } from "lucide-react";
-
-const ADMIN_NAV = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/products", label: "Products", icon: Package },
-  { href: "/admin/categories", label: "Categories", icon: Tag },
-  { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
-  { href: "/admin/customers", label: "Customers", icon: Users },
-  { href: "/admin/coupons", label: "Coupons", icon: Ticket },
-  { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/admin/banners", label: "Banners", icon: ImageIcon },
-  { href: "/admin/settings", label: "Settings", icon: Settings },
-];
-
 import { isUserAdmin } from "@/lib/adminAuth";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  const { dict, language } = useLanguage();
   const { isLoaded, isSignedIn, user } = useUser();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const adminNav = [
+    { href: "/admin", label: dict.admin.dashboard, icon: LayoutDashboard },
+    { href: "/admin/products", label: dict.admin.products, icon: Package },
+    { href: "/admin/categories", label: dict.admin.categories, icon: Tag },
+    { href: "/admin/orders", label: dict.admin.orders, icon: ShoppingCart },
+    { href: "/admin/customers", label: dict.admin.customers, icon: Users },
+    { href: "/admin/coupons", label: dict.admin.coupons, icon: Ticket },
+    { href: "/admin/analytics", label: dict.admin.analytics, icon: BarChart3 },
+    { href: "/admin/banners", label: language === "hi" ? "बैनर" : "Banners", icon: ImageIcon },
+    { href: "/admin/settings", label: dict.admin.settings, icon: Settings },
+  ];
 
   const userEmail = user?.emailAddresses?.[0]?.emailAddress?.toLowerCase();
   const isAdmin = Boolean(isSignedIn && isUserAdmin(user));
@@ -40,7 +42,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="w-12 h-12 rounded-2xl bg-amber-500 flex items-center justify-center text-zinc-950 font-black text-xl shadow-lg">
           M
         </div>
-        <div className="text-xs text-zinc-400 font-mono">Verifying Admin Authorization...</div>
+        <div className="text-xs text-zinc-400 font-mono">{language === "hi" ? "प्रशासक अनुमति जांची जा रही है..." : "Verifying Admin Authorization..."}</div>
       </div>
     );
   }
@@ -55,17 +57,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
 
           <div className="space-y-2">
-            <h1 className="text-2xl font-black text-white uppercase tracking-tight">Admin Authorization Required</h1>
+            <h1 className="text-2xl font-black text-white uppercase tracking-tight">{language === "hi" ? "प्रशासक अनुमति आवश्यक" : "Admin Authorization Required"}</h1>
             <p className="text-xs text-zinc-400 leading-relaxed">
-              This control panel is restricted exclusively to authorized <strong className="text-amber-400">Manoj Traders</strong> administrators.
+              {language === "hi" ? "यह नियंत्रण कक्ष केवल अधिकृत मनोज ट्रेडर्स प्रशासकों के लिए प्रतिबंधित है।" : "This control panel is restricted exclusively to authorized Manoj Traders administrators."}
             </p>
             {userEmail ? (
               <div className="mt-3 p-3 rounded-2xl bg-zinc-950 border border-zinc-800 text-xs font-mono text-zinc-400">
-                Signed in as: <span className="text-rose-400 font-bold">{userEmail}</span> (Non-Admin Account)
+                {language === "hi" ? "साइन इन खाता:" : "Signed in as:"} <span className="text-rose-400 font-bold">{userEmail}</span> ({language === "hi" ? "गैर-प्रशासक खाता" : "Non-Admin Account"})
               </div>
             ) : (
               <div className="mt-3 p-3 rounded-2xl bg-zinc-950 border border-zinc-800 text-xs font-mono text-amber-400">
-                Status: Unauthenticated Guest
+                {language === "hi" ? "स्थिति: अप्रमाणित अतिथि" : "Status: Unauthenticated Guest"}
               </div>
             )}
           </div>
@@ -74,7 +76,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {!isSignedIn ? (
               <SignInButton mode="modal" fallbackRedirectUrl="/admin">
                 <button className="w-full py-3 rounded-2xl bg-amber-500 text-zinc-950 font-bold text-sm hover:bg-amber-400 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 cursor-pointer">
-                  <Lock className="w-4 h-4" /> Sign In as Admin
+                  <Lock className="w-4 h-4" /> {language === "hi" ? "प्रशासक के रूप में साइन इन करें" : "Sign In as Admin"}
                 </button>
               </SignInButton>
             ) : (
@@ -82,7 +84,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href="/sign-in"
                 className="w-full py-3 rounded-2xl bg-amber-500 text-zinc-950 font-bold text-sm hover:bg-amber-400 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20"
               >
-                <Lock className="w-4 h-4" /> Switch Account
+                <Lock className="w-4 h-4" /> {language === "hi" ? "खाता बदलें" : "Switch Account"}
               </Link>
             )}
 
@@ -90,7 +92,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               href="/"
               className="w-full py-3 rounded-2xl bg-zinc-800 text-white font-semibold text-xs hover:bg-zinc-700 transition-colors flex items-center justify-center gap-2"
             >
-              <ArrowLeft className="w-4 h-4" /> Return to Supermarket Storefront
+              <ArrowLeft className="w-4 h-4" /> {language === "hi" ? "स्टोरफ्रंट पर वापस जाएं" : "Return to Supermarket Storefront"}
             </Link>
           </div>
         </div>
@@ -121,9 +123,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               M
             </div>
             <div>
-              <div className="text-sm font-black tracking-tight gold-gradient-text uppercase">Manoj Traders</div>
+              <div className="text-sm font-black tracking-tight gold-gradient-text uppercase">{dict.common.appName}</div>
               <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-1">
-                <Shield className="w-2.5 h-2.5 text-amber-500" /> Admin Supermarket
+                <Shield className="w-2.5 h-2.5 text-amber-500" /> {language === "hi" ? "एडमिन पैनल" : "Admin Supermarket"}
               </div>
             </div>
           </Link>
@@ -137,7 +139,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {ADMIN_NAV.map(({ href, label, icon: Icon }) => {
+          {adminNav.map(({ href, label, icon: Icon }) => {
             const isActive = pathname === href || (href !== "/admin" && pathname.startsWith(href));
             return (
               <Link
@@ -162,7 +164,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="p-4 border-t border-zinc-800 space-y-2">
           {userEmail && (
             <div className="px-4 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-[11px] font-medium text-zinc-400 truncate">
-              Signed as <span className="text-amber-400 font-bold">{userEmail}</span>
+              {language === "hi" ? "लॉगिन:" : "Signed as"} <span className="text-amber-400 font-bold">{userEmail}</span>
             </div>
           )}
 
@@ -170,20 +172,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             href="/"
             className="flex items-center gap-2 text-xs text-zinc-400 hover:text-white transition-colors px-4 py-2 rounded-xl hover:bg-zinc-800 font-semibold"
           >
-            <LogOut className="w-3.5 h-3.5" /> Exit to Storefront
+            <LogOut className="w-3.5 h-3.5" /> {language === "hi" ? "स्टोरफ्रंट पर जाएं" : "Exit to Storefront"}
           </Link>
           <div className="flex items-center gap-2 px-4 py-2 text-[11px] text-zinc-500">
             <Zap className="w-3.5 h-3.5 text-amber-500" />
-            <span>Admin Active & Synced</span>
+            <span>{language === "hi" ? "व्यवस्थापक सक्रिय" : "Admin Active & Synced"}</span>
           </div>
         </div>
       </aside>
 
-      {/* Main Content Area (Responsive width ml-0 lg:ml-64) */}
+      {/* Main Content Area */}
       <div className="ml-0 lg:ml-64 flex-1 flex flex-col min-h-screen w-full">
         {/* Top Admin Header */}
         <header className="sticky top-0 z-20 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border-b border-black/5 dark:border-white/10 h-16 flex items-center justify-between px-4 sm:px-8 shadow-sm">
-          {/* Mobile Sidebar Toggle & Title */}
+          {/* Mobile Sidebar Toggle & Search */}
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -198,13 +200,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Search className="w-4 h-4 text-zinc-400 flex-shrink-0" />
               <input
                 type="text"
-                placeholder="Search products, orders..."
+                placeholder={language === "hi" ? "उत्पाद, ऑर्डर खोजें..." : "Search products, orders..."}
                 className="bg-transparent border-none outline-none text-xs text-zinc-900 dark:text-white w-full placeholder:text-zinc-400 font-medium"
               />
             </div>
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Language Switcher in Admin Header */}
+            <LanguageSwitcher />
+
             {/* Theme Toggle */}
             <button
               onClick={() => setTheme(theme === "light" ? "dark" : "light")}

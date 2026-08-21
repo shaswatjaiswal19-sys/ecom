@@ -7,22 +7,24 @@ import QuickViewModal from "@/components/shop/QuickViewModal";
 import { MOCK_BRANDS } from "@/lib/mockData";
 import { useProductStore, useCategoryStore, useBrandStore } from "@/lib/store";
 import { getProductsFromStore, getCategoriesFromStore } from "@/lib/firestore";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 import { Product } from "@/types";
 import { Search, SlidersHorizontal, Grid3X3, List, X, ChevronDown, Sparkles } from "lucide-react";
-
-const SORT_OPTIONS = [
-  { value: "featured", label: "Featured" },
-  { value: "price-asc", label: "Price: Low to High" },
-  { value: "price-desc", label: "Price: High to Low" },
-  { value: "rating", label: "Top Rated" },
-  { value: "newest", label: "Newest Harvest First" },
-];
 
 function ShopContent() {
   const searchParams = useSearchParams();
   const { products: storeProducts, setProducts } = useProductStore();
   const { categories: storeCategories, setCategories: storeSetCategories } = useCategoryStore();
   const { brands: storeBrands } = useBrandStore();
+  const { dict, language, formatCategory } = useLanguage();
+
+  const sortOptions = [
+    { value: "featured", label: dict.shop.sortFeatured },
+    { value: "price-asc", label: dict.shop.sortPriceLowHigh },
+    { value: "price-desc", label: dict.shop.sortPriceHighLow },
+    { value: "rating", label: dict.shop.sortRating },
+    { value: "newest", label: dict.shop.sortNewest },
+  ];
 
   useEffect(() => {
     fetch("/api/products", { cache: "no-store" })
@@ -82,6 +84,7 @@ function ShopContent() {
           p.name.toLowerCase().includes(q) ||
           p.category.toLowerCase().includes(q) ||
           p.brand.toLowerCase().includes(q) ||
+          (p.nameHi && p.nameHi.toLowerCase().includes(q)) ||
           p.tags.some((t) => t.toLowerCase().includes(q))
       );
     }
@@ -98,14 +101,14 @@ function ShopContent() {
       products = products.filter((p) => p.brand.toLowerCase().includes(selectedBrand.toLowerCase()));
     }
 
-    if (inStockOnly) {
-      products = products.filter((p) => p.inStock);
-    }
-
     products = products.filter((p) => p.price >= priceRange[0] && p.price <= priceRange[1]);
 
     if (minRating > 0) {
       products = products.filter((p) => p.rating >= minRating);
+    }
+
+    if (inStockOnly) {
+      products = products.filter((p) => (p.stock ?? 0) > 0);
     }
 
     switch (sortBy) {
@@ -119,14 +122,14 @@ function ShopContent() {
         products.sort((a, b) => b.rating - a.rating);
         break;
       case "newest":
-        products.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        products.sort((a, b) => (b.id > a.id ? 1 : -1));
         break;
       default:
-        products.sort((a, b) => (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0));
+        break;
     }
 
     return products;
-  }, [search, selectedCategory, selectedBrand, priceRange, minRating, sortBy, inStockOnly]);
+  }, [storeProducts, search, selectedCategory, selectedBrand, priceRange, minRating, sortBy, inStockOnly]);
 
   const clearFilters = () => {
     setSearch("");
@@ -144,11 +147,13 @@ function ShopContent() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 border-b border-zinc-100 dark:border-zinc-800 pb-4 sm:pb-6">
         <div>
           <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-amber-500 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5" /> Manoj Supermarket Catalog
+            <Sparkles className="w-3.5 h-3.5" /> {dict.shop.title}
           </span>
-          <h1 className="text-xl sm:text-3xl font-black text-zinc-900 dark:text-white mt-1">Fresh Groceries & Organic Staples</h1>
+          <h1 className="text-xl sm:text-3xl font-black text-zinc-900 dark:text-white mt-1">
+            {language === "hi" ? "ताज़ा किराना एवं जैविक अनाज" : "Fresh Groceries & Organic Staples"}
+          </h1>
           <p className="text-[11px] sm:text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-            Showing {filtered.length} farm-harvested products
+            {dict.shop.showingResults}: {filtered.length}
           </p>
         </div>
 
@@ -158,7 +163,7 @@ function ShopContent() {
             onClick={() => setFilterOpen(!filterOpen)}
             className="lg:hidden flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-xs font-bold text-zinc-900 dark:text-white border border-zinc-200 dark:border-zinc-700"
           >
-            <SlidersHorizontal className="w-3.5 h-3.5 text-amber-500" /> Filters
+            <SlidersHorizontal className="w-3.5 h-3.5 text-amber-500" /> {dict.shop.filters}
           </button>
 
           <select
@@ -166,9 +171,9 @@ function ShopContent() {
             onChange={(e) => setSortBy(e.target.value)}
             className="px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl sm:rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs font-bold text-zinc-900 dark:text-white outline-none focus:border-amber-500"
           >
-            {SORT_OPTIONS.map((o) => (
+            {sortOptions.map((o) => (
               <option key={o.value} value={o.value}>
-                Sort: {o.label}
+                {o.label}
               </option>
             ))}
           </select>
@@ -200,7 +205,7 @@ function ShopContent() {
         </div>
       </div>
 
-      {/* ONE-TAP HORIZONTAL CATEGORY PILL BAR (Flipkart/Amazon style) */}
+      {/* ONE-TAP HORIZONTAL CATEGORY PILL BAR */}
       <div className="flex gap-2 overflow-x-auto pb-1.5 scrollbar-none">
         <button
           onClick={() => setSelectedCategory("")}
@@ -210,7 +215,7 @@ function ShopContent() {
               : "bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800 hover:border-zinc-400"
           }`}
         >
-          All Items
+          {dict.shop.allAisles}
         </button>
         {categoriesList.map((c) => (
           <button
@@ -222,19 +227,21 @@ function ShopContent() {
                 : "bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800 hover:border-zinc-400"
             }`}
           >
-            {c.name}
+            {formatCategory(c.name)}
           </button>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8">
-        {/* Sidebar Filters (Desktop & Mobile Drawer) */}
+        {/* Sidebar Filters */}
         <aside className={`lg:block ${filterOpen ? "block" : "hidden"} space-y-6`}>
           <div className="bg-white dark:bg-zinc-900 rounded-3xl p-5 sm:p-6 border border-black/5 dark:border-white/10 shadow-sm space-y-6">
             <div className="flex items-center justify-between">
-              <h3 className="font-black text-sm uppercase tracking-wider text-zinc-900 dark:text-white">Filter Groceries</h3>
+              <h3 className="font-black text-sm uppercase tracking-wider text-zinc-900 dark:text-white">
+                {dict.shop.filters}
+              </h3>
               <button onClick={clearFilters} className="text-xs font-bold text-amber-500 hover:underline">
-                Reset All
+                {dict.shop.clearFilters}
               </button>
             </div>
 
@@ -243,7 +250,7 @@ function ShopContent() {
               <Search className="w-4 h-4 text-zinc-400" />
               <input
                 type="text"
-                placeholder="Filter by keyword..."
+                placeholder={dict.common.searchPlaceholder}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="bg-transparent border-none text-xs outline-none text-zinc-900 dark:text-white w-full"
@@ -252,7 +259,7 @@ function ShopContent() {
 
             {/* Categories Filter */}
             <div className="space-y-3">
-              <h4 className="text-xs font-bold uppercase text-zinc-400">Categories</h4>
+              <h4 className="text-xs font-bold uppercase text-zinc-400">{dict.shop.category}</h4>
               <div className="space-y-1.5">
                 <button
                   onClick={() => setSelectedCategory("")}
@@ -260,7 +267,7 @@ function ShopContent() {
                     !selectedCategory ? "bg-amber-500 text-black" : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                   }`}
                 >
-                  All Aisle Categories
+                  {dict.shop.allAisles}
                 </button>
                 {categoriesList.map((c) => (
                   <button
@@ -272,7 +279,7 @@ function ShopContent() {
                         : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     }`}
                   >
-                    {c.name}
+                    {formatCategory(c.name)}
                   </button>
                 ))}
               </div>
@@ -281,7 +288,7 @@ function ShopContent() {
             {/* Price Range Filter */}
             <div className="space-y-3">
               <div className="flex items-center justify-between text-xs font-bold text-zinc-900 dark:text-white">
-                <span>Price Range</span>
+                <span>{dict.shop.priceRange}</span>
                 <span className="text-amber-500">₹0 - ₹{priceRange[1]}</span>
               </div>
               <input
@@ -302,15 +309,15 @@ function ShopContent() {
           {filtered.length === 0 ? (
             <div className="text-center py-16 bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-black/5 dark:border-white/10 space-y-4">
               <div className="text-4xl">🌾</div>
-              <h3 className="text-xl font-black text-zinc-900 dark:text-white">No products found matching filters</h3>
+              <h3 className="text-xl font-black text-zinc-900 dark:text-white">{dict.shop.noProductsFound}</h3>
               <p className="text-xs text-zinc-400 max-w-sm mx-auto">
-                Try clearing your search terms or adjusting the category and price filters.
+                {dict.shop.noProductsFoundDesc}
               </p>
               <button
                 onClick={clearFilters}
                 className="px-6 py-2.5 rounded-2xl bg-amber-500 text-black font-bold text-xs hover:bg-amber-400"
               >
-                Reset Filters
+                {dict.shop.clearFilters}
               </button>
             </div>
           ) : (

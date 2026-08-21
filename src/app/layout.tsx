@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { LanguageProvider } from "@/components/providers/LanguageProvider";
 import ClerkProviderWrapper from "@/components/providers/ClerkProviderWrapper";
 import QueryProvider from "@/components/providers/QueryProvider";
 import Navbar from "@/components/layout/Navbar";
@@ -49,34 +50,36 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={`${inter.variable} font-sans antialiased`}>
         <ClerkProviderWrapper>
-          <ThemeProvider>
-            <QueryProvider>
-              <Navbar />
-              <main className="min-h-screen pb-20 lg:pb-0">{children}</main>
-              <Footer />
-              <CartDrawer />
-              <WishlistDrawer />
-              <MobileNav />
-              <PWAInstallPrompt />
-              <SingleSessionGuard />
-              <Toaster
-                position="bottom-right"
-                toastOptions={{
-                  className: "text-xs font-semibold",
-                  style: {
-                    background: "#18181B",
-                    color: "#FAFAFA",
-                    borderRadius: "12px",
-                    border: "1px solid rgba(212,175,55,0.3)",
-                    padding: "12px 16px",
-                  },
-                  success: {
-                    iconTheme: { primary: "#D4AF37", secondary: "#18181B" },
-                  },
-                }}
-              />
-            </QueryProvider>
-          </ThemeProvider>
+          <LanguageProvider>
+            <ThemeProvider>
+              <QueryProvider>
+                <Navbar />
+                <main className="min-h-screen pb-20 lg:pb-0">{children}</main>
+                <Footer />
+                <CartDrawer />
+                <WishlistDrawer />
+                <MobileNav />
+                <PWAInstallPrompt />
+                <SingleSessionGuard />
+                <Toaster
+                  position="bottom-right"
+                  toastOptions={{
+                    className: "text-xs font-semibold",
+                    style: {
+                      background: "#18181B",
+                      color: "#FAFAFA",
+                      borderRadius: "12px",
+                      border: "1px solid rgba(212,175,55,0.3)",
+                      padding: "12px 16px",
+                    },
+                    success: {
+                      iconTheme: { primary: "#D4AF37", secondary: "#18181B" },
+                    },
+                  }}
+                />
+              </QueryProvider>
+            </ThemeProvider>
+          </LanguageProvider>
         </ClerkProviderWrapper>
       </body>
     </html>

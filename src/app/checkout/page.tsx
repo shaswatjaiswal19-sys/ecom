@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useCartStore, useShippingStore } from "@/lib/store";
 import { createOrderInStore } from "@/lib/firestore";
 import { formatCurrency } from "@/lib/utils";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 import { Order } from "@/types";
 import { useUser, SignInButton } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
@@ -29,13 +30,6 @@ type AddressForm = z.infer<typeof addressSchema>;
 
 type PaymentMethod = "Stripe" | "Razorpay" | "UPI" | "COD";
 
-const PAYMENT_OPTIONS: { id: PaymentMethod; label: string; icon: string; description: string }[] = [
-  { id: "Stripe", label: "Credit / Debit Card", icon: "💳", description: "Visa, Mastercard, AMEX — Secure Stripe Encryption" },
-  { id: "Razorpay", label: "Razorpay", icon: "⚡", description: "Cards, Net Banking, UPI, Wallets — via Razorpay" },
-  { id: "UPI", label: "UPI Direct Transfer", icon: "📱", description: "GPay, PhonePe, BHIM UPI — Instant Confirmation" },
-  { id: "COD", label: "Cash on Delivery", icon: "💵", description: "Pay with cash upon delivery at your doorstep" },
-];
-
 const INDIAN_STATES = [
   "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat",
   "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh",
@@ -44,14 +38,51 @@ const INDIAN_STATES = [
   "Uttarakhand", "West Bengal", "Delhi NCR", "Chandigarh", "Jammu and Kashmir", "Ladakh"
 ];
 
-const GUEST_STEPS = ["Authentication", "Shipping Address", "Payment", "Review Order"];
-const AUTH_STEPS = ["Shipping Address", "Payment", "Review Order"];
-
 export default function CheckoutPage() {
   const { user: clerkUser } = useUser();
   const router = useRouter();
+  const { dict, getLocalizedProduct, formatWeight, language } = useLanguage();
 
   const isUserLoggedIn = Boolean(clerkUser);
+
+  const guestSteps = [
+    language === "hi" ? "प्रमाणीकरण" : "Authentication",
+    dict.checkout.shippingAddress,
+    dict.checkout.paymentMethod,
+    language === "hi" ? "ऑर्डर समीक्षा" : "Review Order"
+  ];
+  const authSteps = [
+    dict.checkout.shippingAddress,
+    dict.checkout.paymentMethod,
+    language === "hi" ? "ऑर्डर समीक्षा" : "Review Order"
+  ];
+
+  const paymentOptions: { id: PaymentMethod; label: string; icon: string; description: string }[] = [
+    {
+      id: "UPI",
+      label: dict.checkout.upi,
+      icon: "📱",
+      description: language === "hi" ? "PhonePe, Google Pay, Paytm — तुरंत क्यूआर कोड स्कैन" : "GPay, PhonePe, BHIM UPI — Instant Confirmation"
+    },
+    {
+      id: "Stripe",
+      label: dict.checkout.card,
+      icon: "💳",
+      description: language === "hi" ? "वीज़ा, मास्टरकार्ड, रुपे — सुरक्षित भुगतान" : "Visa, Mastercard, AMEX — Secure Stripe Encryption"
+    },
+    {
+      id: "Razorpay",
+      label: dict.checkout.netBanking,
+      icon: "⚡",
+      description: language === "hi" ? "कार्ड, नेट बैंकिंग, यूपीआई, वॉलेट — रेज़रपे द्वारा" : "Cards, Net Banking, UPI, Wallets — via Razorpay"
+    },
+    {
+      id: "COD",
+      label: dict.checkout.cashOnDelivery,
+      icon: "💵",
+      description: language === "hi" ? "डिलीवरी के समय घर पर नकद भुगतान करें" : "Pay with cash upon delivery at your doorstep"
+    },
+  ];
 
   // If user is already logged in, start directly at Shipping Address (step 1).
   const [step, setStep] = useState(isUserLoggedIn ? 1 : 0);
@@ -102,7 +133,7 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = async () => {
     if (paymentMethod === "UPI" && !upiUtr.trim()) {
-      toast.error("Please enter your 12-digit UPI UTR / Reference Number after paying");
+      toast.error(language === "hi" ? "कृपया भुगतान के बाद अपना 12-अंकीय यूपीआई यूटीआर / संदर्भ संख्या दर्ज करें" : "Please enter your 12-digit UPI UTR / Reference Number after paying");
       return;
     }
 
@@ -154,7 +185,6 @@ export default function CheckoutPage() {
         if (data.success && data.order) {
           order = data.order;
         } else {
-          // If the server rejected due to stock or validation, report error
           if (data.error) {
             toast.error(data.error);
             setIsPlacingOrder(false);
@@ -181,8 +211,8 @@ export default function CheckoutPage() {
       clearCart();
       toast.success(
         paymentMethod === "UPI"
-          ? "UPI Payment submitted! Admin will verify your UTR and confirm your order. 🎉"
-          : "Order Placed Successfully! 🎉"
+          ? (language === "hi" ? "यूपीआई भुगतान विवरण सबमिट किया गया! प्रशासक सत्यापन के बाद ऑर्डर की पुष्टि करेंगे। 🎉" : "UPI Payment submitted! Admin will verify your UTR and confirm your order. 🎉")
+          : (dict.checkout.orderPlacedSuccess + " 🎉")
       );
       router.push(`/order-confirmation/${order.id}`);
     } catch (error: any) {
@@ -196,8 +226,8 @@ export default function CheckoutPage() {
   if (cart.length === 0) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4 py-24">
-        <h2 className="text-2xl font-black text-zinc-900 dark:text-white mb-4">Your cart is empty</h2>
-        <Link href="/shop" className="text-amber-500 font-bold hover:underline">← Back to Catalog</Link>
+        <h2 className="text-2xl font-black text-zinc-900 dark:text-white mb-4">{dict.cart.emptyTitle}</h2>
+        <Link href="/shop" className="text-amber-500 font-bold hover:underline">← {dict.cart.startShopping}</Link>
       </div>
     );
   }
@@ -205,13 +235,13 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 py-6 sm:py-12 pb-24 lg:pb-12">
       <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8">
-        <h1 className="text-2xl sm:text-4xl font-black text-zinc-900 dark:text-white mb-4 sm:mb-8">Secure Kirana Checkout</h1>
+        <h1 className="text-2xl sm:text-4xl font-black text-zinc-900 dark:text-white mb-4 sm:mb-8">{dict.checkout.title}</h1>
 
         {/* Progress Steps */}
         <div className="flex items-center gap-0 mb-6 sm:mb-10 overflow-x-auto pb-2 scrollbar-none">
-          {(isUserLoggedIn ? AUTH_STEPS : GUEST_STEPS).map((s, i) => {
+          {(isUserLoggedIn ? authSteps : guestSteps).map((s, i) => {
             const activeStepIdx = isUserLoggedIn ? step - 1 : step;
-            const stepsList = isUserLoggedIn ? AUTH_STEPS : GUEST_STEPS;
+            const stepsList = isUserLoggedIn ? authSteps : guestSteps;
             return (
               <div key={s} className="flex items-center flex-shrink-0">
                 <div className="flex items-center gap-1.5 sm:gap-2">
@@ -248,13 +278,13 @@ export default function CheckoutPage() {
                 </div>
                 <div className="space-y-2">
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs font-bold uppercase tracking-wider">
-                    <ShieldCheck className="w-3.5 h-3.5" /> Authentication
+                    <ShieldCheck className="w-3.5 h-3.5" /> {language === "hi" ? "प्रमाणीकरण" : "Authentication"}
                   </div>
                   <h2 className="text-2xl font-black text-zinc-900 dark:text-white">
-                    Sign In with Clerk to Complete Order
+                    {language === "hi" ? "ऑर्डर पूरा करने के लिए क्लर्क से साइन इन करें" : "Sign In with Clerk to Complete Order"}
                   </h2>
                   <p className="text-sm text-zinc-600 dark:text-zinc-400 max-w-md mx-auto">
-                    Please sign in to your Clerk account (Google, Email, or Phone) for doorstep delivery tracking and digital tax invoices.
+                    {language === "hi" ? "घर तक डिलीवरी ट्रैकिंग और डिजिटल टैक्स इनवॉइस के लिए कृपया अपने क्लर्क खाते (गूगल, ईमेल या फोन) से साइन इन करें।" : "Please sign in to your Clerk account (Google, Email, or Phone) for doorstep delivery tracking and digital tax invoices."}
                   </p>
                 </div>
 
@@ -263,14 +293,14 @@ export default function CheckoutPage() {
                     href="/sign-in?redirect_url=/checkout"
                     className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 cursor-pointer"
                   >
-                    <span>Sign In with Clerk</span>
+                    <span>{dict.nav.signIn}</span>
                     <ArrowRight className="w-4 h-4" />
                   </Link>
                   <button
                     onClick={() => setStep(1)}
                     className="w-full py-2.5 px-4 text-xs font-semibold text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors cursor-pointer"
                   >
-                    Or Continue as Guest →
+                    {language === "hi" ? "या अतिथि के रूप में जारी रखें →" : "Or Continue as Guest →"}
                   </button>
                 </div>
               </div>
@@ -281,7 +311,7 @@ export default function CheckoutPage() {
               <div className="bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-3xl p-4 sm:p-8 border border-black/5 dark:border-white/10 shadow-sm">
                 <div className="flex items-center justify-between mb-5 sm:mb-6">
                   <h2 className="text-base sm:text-lg font-black text-zinc-900 dark:text-white flex items-center gap-2">
-                    <MapPin className="w-5 h-5 text-amber-500" /> Shipping Address
+                    <MapPin className="w-5 h-5 text-amber-500" /> {dict.checkout.shippingAddress}
                   </h2>
                   {clerkUser && (
                     <span className="text-[11px] sm:text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full">
@@ -294,11 +324,11 @@ export default function CheckoutPage() {
                   {/* Full Name */}
                   <div>
                     <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1 uppercase tracking-wider">
-                      Full Name *
+                      {dict.checkout.fullName} *
                     </label>
                     <input
                       {...form.register("fullName")}
-                      placeholder="e.g. Ramesh Sharma"
+                      placeholder={dict.checkout.fullNamePlaceholder}
                       className="w-full px-4 py-3 min-h-[46px] rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-sm outline-none focus:border-amber-500 transition-colors text-zinc-900 dark:text-white"
                     />
                     {form.formState.errors.fullName && (
@@ -309,12 +339,12 @@ export default function CheckoutPage() {
                   {/* Phone */}
                   <div>
                     <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1 uppercase tracking-wider">
-                      Mobile Number (For Delivery OTP) *
+                      {dict.checkout.phone} *
                     </label>
                     <input
                       {...form.register("phone")}
                       type="tel"
-                      placeholder="e.g. 9876543210"
+                      placeholder={dict.checkout.phonePlaceholder}
                       className="w-full px-4 py-3 min-h-[46px] rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-sm outline-none focus:border-amber-500 transition-colors text-zinc-900 dark:text-white"
                     />
                     {form.formState.errors.phone && (
@@ -325,11 +355,11 @@ export default function CheckoutPage() {
                   {/* Street Address */}
                   <div className="md:col-span-2">
                     <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1 uppercase tracking-wider">
-                      House No, Building, Street Address *
+                      {dict.checkout.address} *
                     </label>
                     <input
                       {...form.register("streetAddress")}
-                      placeholder="e.g. Flat 402, Shanti Heights, MG Road"
+                      placeholder={dict.checkout.addressPlaceholder}
                       className="w-full px-4 py-3 min-h-[46px] rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-sm outline-none focus:border-amber-500 transition-colors text-zinc-900 dark:text-white"
                     />
                     {form.formState.errors.streetAddress && (
@@ -340,13 +370,13 @@ export default function CheckoutPage() {
                   {/* State (Dropdown Select) */}
                   <div>
                     <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1 uppercase tracking-wider">
-                      State / Union Territory *
+                      {dict.checkout.state} *
                     </label>
                     <select
                       {...form.register("state")}
                       className="w-full px-4 py-3 min-h-[46px] rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-sm outline-none focus:border-amber-500 transition-colors text-zinc-900 dark:text-white"
                     >
-                      <option value="">Select State</option>
+                      <option value="">{dict.checkout.selectState}</option>
                       {INDIAN_STATES.map((st) => (
                         <option key={st} value={st}>
                           {st}
@@ -361,11 +391,11 @@ export default function CheckoutPage() {
                   {/* City / District */}
                   <div>
                     <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1 uppercase tracking-wider">
-                      City / District *
+                      {dict.checkout.city} *
                     </label>
                     <input
                       {...form.register("city")}
-                      placeholder="e.g. Mumbai, Varanasi, Lucknow"
+                      placeholder={dict.checkout.cityPlaceholder}
                       className="w-full px-4 py-3 min-h-[46px] rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-sm outline-none focus:border-amber-500 transition-colors text-zinc-900 dark:text-white"
                     />
                     {form.formState.errors.city && (
@@ -376,13 +406,13 @@ export default function CheckoutPage() {
                   {/* PIN Code */}
                   <div>
                     <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1 uppercase tracking-wider">
-                      6-Digit PIN Code *
+                      {dict.checkout.pincode} *
                     </label>
                     <input
                       {...form.register("pincode")}
                       type="text"
                       maxLength={6}
-                      placeholder="e.g. 221001"
+                      placeholder={dict.checkout.pincodePlaceholder}
                       className="w-full px-4 py-3 min-h-[46px] rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-sm outline-none focus:border-amber-500 transition-colors text-zinc-900 dark:text-white"
                     />
                     {form.formState.errors.pincode && (
@@ -393,12 +423,12 @@ export default function CheckoutPage() {
                   {/* Country */}
                   <div>
                     <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 mb-1 uppercase tracking-wider">
-                      Country
+                      {dict.checkout.country}
                     </label>
                     <input
                       {...form.register("country")}
                       disabled
-                      value="India"
+                      value={dict.checkout.countryDefault}
                       className="w-full px-4 py-3 min-h-[46px] rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 text-sm outline-none text-zinc-500 cursor-not-allowed"
                     />
                   </div>
@@ -408,7 +438,7 @@ export default function CheckoutPage() {
                   onClick={() => form.handleSubmit(() => setStep(2))()}
                   className="mt-6 w-full py-3.5 sm:py-4 rounded-2xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 font-bold text-sm hover:bg-amber-500 hover:text-black transition-all flex items-center justify-center gap-2 active:scale-98"
                 >
-                  Continue to Payment <ArrowRight className="w-4 h-4" />
+                  {language === "hi" ? "भुगतान पर आगे बढ़ें" : "Continue to Payment"} <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             )}
@@ -417,11 +447,11 @@ export default function CheckoutPage() {
             {step === 2 && (
               <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-black/5 dark:border-white/10 shadow-sm">
                 <h2 className="text-lg font-black text-zinc-900 dark:text-white mb-6 flex items-center gap-2">
-                  <CreditCard className="w-5 h-5 text-amber-500" /> Select Payment Method
+                  <CreditCard className="w-5 h-5 text-amber-500" /> {dict.checkout.paymentMethod}
                 </h2>
 
                 <div className="space-y-3">
-                  {PAYMENT_OPTIONS.map((opt) => (
+                  {paymentOptions.map((opt) => (
                     <label
                       key={opt.id}
                       className={`flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all ${
@@ -468,12 +498,12 @@ export default function CheckoutPage() {
 
                       <div className="flex-1 space-y-2 text-center sm:text-left">
                         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-600 text-white text-[10px] font-black uppercase tracking-wider shadow-sm">
-                          <span>पे</span> PhonePe Official Business QR
+                          <span>पे</span> {language === "hi" ? "फोनपे आधिकारिक व्यापार क्यूआर" : "PhonePe Official Business QR"}
                         </div>
                         <h4 className="text-sm font-black text-zinc-900 dark:text-white">
-                          Account Name: <span className="text-amber-500 font-extrabold">SHASWAT JAISWAL</span>
+                          {language === "hi" ? "खाता धारक:" : "Account Name:"} <span className="text-amber-500 font-extrabold">SHASWAT JAISWAL</span>
                         </h4>
-                        <p className="text-xs text-zinc-500">Scan QR code using PhonePe, GPay, Paytm or copy VPA ID:</p>
+                        <p className="text-xs text-zinc-500">{language === "hi" ? "PhonePe, Google Pay, Paytm से QR स्कैन करें या UPI आईडी कॉपी करें:" : "Scan QR code using PhonePe, GPay, Paytm or copy VPA ID:"}</p>
                         
                         <div className="flex items-center gap-2 justify-center sm:justify-start pt-1">
                           <span className="font-mono font-black text-xs bg-white dark:bg-zinc-950 px-3.5 py-1.5 rounded-xl border border-purple-500/30 text-purple-600 dark:text-purple-400 shadow-xs">
@@ -487,7 +517,7 @@ export default function CheckoutPage() {
                             }}
                             className="text-xs font-extrabold px-3 py-1.5 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-300 hover:bg-purple-500 hover:text-white transition-colors"
                           >
-                            Copy UPI ID
+                            {language === "hi" ? "यूपीआई आईडी कॉपी करें" : "Copy UPI ID"}
                           </button>
                         </div>
                       </div>
@@ -496,17 +526,17 @@ export default function CheckoutPage() {
                     {/* UTR Input Field */}
                     <div className="pt-2 border-t border-amber-500/20 space-y-1.5">
                       <label className="block text-xs font-extrabold text-zinc-900 dark:text-white uppercase tracking-wider">
-                        Enter 12-Digit UPI Transaction UTR / Ref Number <span className="text-rose-500">*</span>
+                        {language === "hi" ? "12-अंकीय यूपीआई यूटीआर / संदर्भ संख्या दर्ज करें" : "Enter 12-Digit UPI Transaction UTR / Ref Number"} <span className="text-rose-500">*</span>
                       </label>
                       <input
                         type="text"
-                        placeholder="e.g. 329182391029 (Found in GPay/PhonePe payment receipt)"
+                        placeholder={language === "hi" ? "उदा. 329182391029 (PhonePe/GPay रसीद में उपलब्ध)" : "e.g. 329182391029 (Found in GPay/PhonePe payment receipt)"}
                         value={upiUtr}
                         onChange={(e) => setUpiUtr(e.target.value)}
                         className="w-full px-4 py-3 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-700 text-sm font-mono font-bold text-zinc-900 dark:text-white outline-none focus:border-amber-500 transition-colors shadow-sm"
                       />
                       <p className="text-[11px] text-zinc-500">
-                        ⚡ Admin will verify your UTR number and approve your order immediately.
+                        ⚡ {language === "hi" ? "प्रशासक आपके यूटीआर नंबर की पुष्टि करेंगे और तुरंत आपका ऑर्डर प्रोसेस करेंगे।" : "Admin will verify your UTR number and approve your order immediately."}
                       </p>
                     </div>
                   </div>
@@ -517,13 +547,13 @@ export default function CheckoutPage() {
                     onClick={() => setStep(1)}
                     className="flex-1 py-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 font-bold text-sm hover:border-zinc-400 transition-colors"
                   >
-                    ← Back
+                    ← {dict.common.back}
                   </button>
                   <button
                     onClick={() => setStep(3)}
                     className="flex-1 py-4 rounded-2xl bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 font-bold text-sm hover:bg-amber-500 hover:text-black transition-all flex items-center justify-center gap-2"
                   >
-                    Review Order <ArrowRight className="w-4 h-4" />
+                    {language === "hi" ? "ऑर्डर समीक्षा" : "Review Order"} <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -532,32 +562,33 @@ export default function CheckoutPage() {
             {/* STEP 3: Review & Confirm */}
             {step === 3 && (
               <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 border border-black/5 dark:border-white/10 shadow-sm">
-                <h2 className="text-lg font-black text-zinc-900 dark:text-white mb-6">Review Your Order</h2>
+                <h2 className="text-lg font-black text-zinc-900 dark:text-white mb-6">{language === "hi" ? "अपने ऑर्डर की समीक्षा करें" : "Review Your Order"}</h2>
 
                 <div className="space-y-3 mb-6">
                   {cart.map((item, idx) => {
                     const price = item.selectedWeight?.price || item.selectedVariant?.price || item.product.price;
+                    const prodName = getLocalizedProduct(item.product).name;
                     return (
                       <div key={idx} className="flex gap-3 items-center p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl">
                         <div className="relative w-14 h-14 rounded-xl overflow-hidden border border-black/5">
-                          <Image src={item.product.images[0]} alt={item.product.name} fill className="object-contain p-1.5" />
+                          <Image src={item.product.images[0]} alt={prodName} fill className="object-contain p-1.5" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-xs font-bold text-zinc-900 dark:text-white line-clamp-1">{item.product.name}</p>
+                          <p className="text-xs font-bold text-zinc-900 dark:text-white line-clamp-1">{prodName}</p>
                           <div className="flex items-center gap-2 text-[10px] text-zinc-400 mt-0.5">
                             {item.selectedWeight ? (
                               <span className="font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
-                                {item.selectedWeight.weight}
+                                {formatWeight(item.selectedWeight.weight)}
                               </span>
                             ) : item.selectedVariant ? (
                               <span>{item.selectedVariant.name}</span>
                             ) : item.product.weight ? (
                               <span className="font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
-                                {item.product.weight}
+                                {formatWeight(item.product.weight)}
                               </span>
                             ) : null}
                             <span className="font-semibold text-zinc-700 dark:text-zinc-300">
-                              Qty: {item.quantity} {item.product.unit ? `(${item.product.unit})` : ""}
+                              {dict.product.quantity}: {item.quantity} {item.product.unit ? `(${item.product.unit})` : ""}
                             </span>
                           </div>
                         </div>
@@ -572,13 +603,13 @@ export default function CheckoutPage() {
                 {/* Summary info */}
                 <div className="p-4 bg-zinc-50 dark:bg-zinc-950 rounded-2xl mb-6 space-y-2 text-xs">
                   <div className="flex justify-between text-zinc-600 dark:text-zinc-400">
-                    <span>Shipping to:</span>
+                    <span>{dict.checkout.shippingAddress}:</span>
                     <span className="font-semibold text-zinc-900 dark:text-white text-right max-w-[200px]">
                       {form.getValues("streetAddress")}, {form.getValues("city")}, {form.getValues("state")} - {form.getValues("pincode")}
                     </span>
                   </div>
                   <div className="flex justify-between text-zinc-600 dark:text-zinc-400">
-                    <span>Payment:</span>
+                    <span>{dict.checkout.paymentMethod}:</span>
                     <span className="font-semibold text-zinc-900 dark:text-white">{paymentMethod}</span>
                   </div>
                 </div>
@@ -588,7 +619,7 @@ export default function CheckoutPage() {
                     onClick={() => setStep(2)}
                     className="flex-1 py-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 font-bold text-sm hover:border-zinc-400 transition-colors"
                   >
-                    ← Back
+                    ← {dict.common.back}
                   </button>
                   <button
                     onClick={handlePlaceOrder}
@@ -596,7 +627,7 @@ export default function CheckoutPage() {
                     className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-400 text-black font-bold text-sm hover:brightness-110 transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 disabled:opacity-70"
                   >
                     {isPlacingOrder ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
-                    {isPlacingOrder ? "Placing Order..." : "Place Order Now"}
+                    {isPlacingOrder ? (language === "hi" ? "ऑर्डर दिया जा रहा है..." : "Placing Order...") : dict.checkout.placeOrder}
                   </button>
                 </div>
               </div>
@@ -606,15 +637,15 @@ export default function CheckoutPage() {
           {/* Order Summary Sidebar */}
           <div className="space-y-4">
             <div className="bg-white dark:bg-zinc-900 rounded-3xl p-6 border border-black/5 dark:border-white/10 shadow-sm sticky top-28">
-              <h3 className="text-sm font-bold text-zinc-900 dark:text-white mb-5">Order Total</h3>
+              <h3 className="text-sm font-bold text-zinc-900 dark:text-white mb-5">{dict.cart.orderSummary}</h3>
               <div className="space-y-2.5 text-sm">
                 <div className="flex justify-between text-zinc-600 dark:text-zinc-400">
-                  <span>Subtotal</span>
+                  <span>{dict.cart.subtotal}</span>
                   <span className="font-semibold">{formatCurrency(subtotal)}</span>
                 </div>
                 {discountAmount > 0 && (
                   <div className="flex justify-between text-emerald-500">
-                    <span>Coupon Savings</span>
+                    <span>{dict.cart.discountApplied}</span>
                     <span className="font-bold">-{formatCurrency(discountAmount)}</span>
                   </div>
                 )}
@@ -623,21 +654,21 @@ export default function CheckoutPage() {
                   <span className="font-semibold">{formatCurrency(tax)}</span>
                 </div>
                 <div className="flex justify-between text-zinc-600 dark:text-zinc-400">
-                  <span className="flex items-center gap-1"><Truck className="w-3.5 h-3.5" /> Shipping</span>
+                  <span className="flex items-center gap-1"><Truck className="w-3.5 h-3.5" /> {dict.home.expressDelivery}</span>
                   {shippingFee === 0 ? (
-                    <span className="font-bold text-emerald-500">FREE</span>
+                    <span className="font-bold text-emerald-500">{dict.common.free}</span>
                   ) : (
                     <span className="font-semibold">{formatCurrency(shippingFee)}</span>
                   )}
                 </div>
                 <div className="border-t border-zinc-200 dark:border-zinc-800 pt-2.5 flex justify-between">
-                  <span className="text-base font-black text-zinc-900 dark:text-white">Total</span>
+                  <span className="text-base font-black text-zinc-900 dark:text-white">{dict.cart.totalAmount}</span>
                   <span className="text-base font-black text-amber-600 dark:text-amber-400">{formatCurrency(finalTotal)}</span>
                 </div>
               </div>
               <div className="mt-4 flex items-center gap-1.5 text-[10px] text-zinc-400 justify-center">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                256-bit SSL Secure Checkout
+                {language === "hi" ? "256-बिट एसएसएल सुरक्षित चेकआउट" : "256-bit SSL Secure Checkout"}
               </div>
             </div>
           </div>

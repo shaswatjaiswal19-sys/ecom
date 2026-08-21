@@ -5,6 +5,7 @@ import { useOrderStore, useCartStore } from "@/lib/store";
 import { useUser } from "@clerk/nextjs";
 import { getOrdersFromStore } from "@/lib/firestore";
 import { formatCurrency } from "@/lib/utils";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 import {
   Package,
   ChevronDown,
@@ -41,19 +42,11 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string; icon: React.Ele
 
 const ORDER_STATUS_STEPS = ["Placed", "Confirmed", "Packed", "Shipped", "Out for Delivery", "Delivered"];
 
-const REASON_OPTIONS = [
-  "Ordered by mistake / Duplicate order",
-  "Item price decreased / Found cheaper price elsewhere",
-  "Delivery time is too long",
-  "Incorrect shipping address or mobile number",
-  "Payment issue or changed mind",
-  "Other reason",
-];
-
 export default function OrdersPage() {
   const { user: clerkUser } = useUser();
   const { orders: rawStoreOrders, setOrders, requestCancellation } = useOrderStore();
   const { addToCart } = useCartStore();
+  const { dict, formatStatus, formatWeight, language } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState("All");
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
@@ -71,9 +64,18 @@ export default function OrdersPage() {
     new Map(rawStoreOrders.map((o) => [o.id || o.orderNumber, o])).values()
   );
 
+  const reasonOptions = [
+    language === "hi" ? "गलती से ऑर्डर हो गया / डुप्लिकेट ऑर्डर" : "Ordered by mistake / Duplicate order",
+    language === "hi" ? "कीमत कम हो गई / कहीं और सस्ता मिला" : "Item price decreased / Found cheaper price elsewhere",
+    language === "hi" ? "डिलीवरी का समय बहुत लंबा है" : "Delivery time is too long",
+    language === "hi" ? "गलत डिलीवरी पता या मोबाइल नंबर" : "Incorrect shipping address or mobile number",
+    language === "hi" ? "भुगतान समस्या या मन बदल गया" : "Payment issue or changed mind",
+    language === "hi" ? "अन्य कारण" : "Other reason",
+  ];
+
   // Cancellation Modal State
   const [cancellingOrder, setCancellingOrder] = useState<any | null>(null);
-  const [reason, setReason] = useState(REASON_OPTIONS[0]);
+  const [reason, setReason] = useState(reasonOptions[0]);
   const [refundMethod, setRefundMethod] = useState<"UPI" | "Bank">("UPI");
   const [upiId, setUpiId] = useState("");
   const [accountHolder, setAccountHolder] = useState("");
@@ -81,7 +83,12 @@ export default function OrdersPage() {
   const [ifscCode, setIfscCode] = useState("");
   const [bankName, setBankName] = useState("");
 
-  const filters = ["All", "On the Way", "Delivered", "Cancelled"];
+  const filters = [
+    { id: "All", label: dict.orders.allOrders },
+    { id: "On the Way", label: language === "hi" ? "रास्ते में है" : "On the Way" },
+    { id: "Delivered", label: dict.orders.delivered },
+    { id: "Cancelled", label: dict.orders.cancelled }
+  ];
 
   const userEmail = clerkUser?.primaryEmailAddress?.emailAddress?.toLowerCase();
   const userId = clerkUser?.id;
@@ -189,10 +196,10 @@ export default function OrdersPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-5">
         <div>
           <h1 className="text-2xl font-black text-zinc-900 dark:text-white flex items-center gap-2">
-            <Package className="w-6 h-6 text-amber-500" /> My Orders & Purchase History
+            <Package className="w-6 h-6 text-amber-500" /> {dict.orders.title}
           </h1>
           <p className="text-xs text-zinc-500 mt-1">
-            Track packages, view tax invoices, re-order items, or manage returns & refunds.
+            {language === "hi" ? "पैकेज ट्रैक करें, इनवॉइस देखें, दोबारा ऑर्डर करें, या रिटर्न प्रबंधित करें।" : "Track packages, view tax invoices, re-order items, or manage returns & refunds."}
           </p>
         </div>
 
@@ -201,7 +208,7 @@ export default function OrdersPage() {
           <Search className="w-4 h-4 text-zinc-400 flex-shrink-0" />
           <input
             type="text"
-            placeholder="Search orders or item names..."
+            placeholder={language === "hi" ? "ऑर्डर या उत्पाद का नाम खोजें..." : "Search orders or item names..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-transparent text-xs font-semibold text-zinc-900 dark:text-white outline-none placeholder:text-zinc-400"
@@ -218,15 +225,15 @@ export default function OrdersPage() {
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
         {filters.map((f) => (
           <button
-            key={f}
-            onClick={() => setFilter(f)}
+            key={f.id}
+            onClick={() => setFilter(f.id)}
             className={`px-5 py-2.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all border ${
-              filter === f
+              filter === f.id
                 ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-950 border-zinc-900 dark:border-white shadow-md"
                 : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700"
             }`}
           >
-            {f}
+            {f.label}
           </button>
         ))}
       </div>
@@ -235,9 +242,9 @@ export default function OrdersPage() {
       {filteredOrders.length === 0 ? (
         <div className="text-center py-20 bg-white dark:bg-zinc-900 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-3">
           <Package className="w-14 h-14 mx-auto text-zinc-300 dark:text-zinc-700 stroke-[1.5]" />
-          <h3 className="text-base font-bold text-zinc-900 dark:text-white">No orders match your search</h3>
+          <h3 className="text-base font-bold text-zinc-900 dark:text-white">{dict.orders.noOrders}</h3>
           <p className="text-xs text-zinc-500 max-w-sm mx-auto">
-            Try searching for another product name or reset your order status filter tab.
+            {language === "hi" ? "कोई अन्य उत्पाद नाम खोजें या फ़िल्टर रीसेट करें।" : "Try searching for another product name or reset your order status filter tab."}
           </p>
         </div>
       ) : (
@@ -446,7 +453,7 @@ export default function OrdersPage() {
                   onChange={(e) => setReason(e.target.value)}
                   className="w-full px-4 py-3 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 text-xs font-semibold text-zinc-900 dark:text-white outline-none focus:border-amber-500"
                 >
-                  {REASON_OPTIONS.map((opt) => (
+                  {reasonOptions.map((opt: string) => (
                     <option key={opt} value={opt}>
                       {opt}
                     </option>

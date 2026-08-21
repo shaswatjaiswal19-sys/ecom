@@ -9,6 +9,7 @@ import { useProductStore } from "@/lib/store";
 import { useCartStore, useWishlistStore } from "@/lib/store";
 import { getProductBySlug, getProductsFromStore } from "@/lib/firestore";
 import { formatCurrency } from "@/lib/utils";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 import { Product, ProductVariant, ProductWeightOption } from "@/types";
 import {
   Star, ShoppingBag, Heart, Share2, Shield, Truck, RefreshCw,
@@ -27,12 +28,15 @@ function ProductDetailContent({ slug }: { slug: string }) {
   const initialViewMode = searchParams.get("view") === "360" ? "360" : "overview";
 
   const { products, setProducts } = useProductStore();
+  const { dict, getLocalizedProduct, formatWeight, formatCategory, language } = useLanguage();
   const [liveProduct, setLiveProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const product =
     liveProduct ||
     products.find((p) => p.slug === slug || p.id === slug);
+
+  const localized = getLocalizedProduct(product);
 
   useEffect(() => {
     let isMounted = true;
@@ -104,15 +108,15 @@ function ProductDetailContent({ slug }: { slug: string }) {
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-1.5 sm:gap-2 text-xs text-zinc-500 mb-4 sm:mb-8 overflow-x-auto pb-1 scrollbar-none">
-          <Link href="/" className="hover:text-amber-500 transition-colors whitespace-nowrap">Home</Link>
+          <Link href="/" className="hover:text-amber-500 transition-colors whitespace-nowrap">{dict.nav.home}</Link>
           <ChevronRight className="w-3 h-3 flex-shrink-0" />
-          <Link href="/shop" className="hover:text-amber-500 transition-colors whitespace-nowrap">Catalog</Link>
+          <Link href="/shop" className="hover:text-amber-500 transition-colors whitespace-nowrap">{dict.shop.title}</Link>
           <ChevronRight className="w-3 h-3 flex-shrink-0" />
-          <Link href={`/shop?category=${product.category.toLowerCase().replace(/\s+/g, "-")}`} className="hover:text-amber-500 transition-colors whitespace-nowrap">
-            {product.category}
+          <Link href={`/shop?category=${encodeURIComponent(product.category)}`} className="hover:text-amber-500 transition-colors whitespace-nowrap">
+            {localized.category}
           </Link>
           <ChevronRight className="w-3 h-3 flex-shrink-0" />
-          <span className="text-zinc-900 dark:text-white font-semibold truncate max-w-[150px] sm:max-w-[200px]">{product.name}</span>
+          <span className="text-zinc-900 dark:text-white font-semibold truncate max-w-[150px] sm:max-w-[200px]">{localized.name}</span>
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-12 xl:gap-16">
@@ -130,27 +134,33 @@ function ProductDetailContent({ slug }: { slug: string }) {
                       : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
                   }`}
                 >
-                  {tab === "360" ? "🔄 360° View" : tab}
+                  {tab === "360"
+                    ? "🔄 " + dict.product.view360
+                    : tab === "overview"
+                    ? (language === "hi" ? "विवरण" : "Overview")
+                    : tab === "specs"
+                    ? (language === "hi" ? "विनिर्देश" : "Specifications")
+                    : (language === "hi" ? "समीक्षाएं" : "Reviews")}
                 </button>
               ))}
             </div>
 
             {activeTab === "360" ? (
-              <Product360Viewer images={product.images360 || product.images} productName={product.name} />
+              <Product360Viewer images={product.images360 || product.images} productName={localized.name} />
             ) : (
               <>
                 {/* Main Image */}
                 <div className="relative aspect-square rounded-2xl sm:rounded-3xl overflow-hidden bg-zinc-50 dark:bg-zinc-900 border border-black/5 dark:border-white/10 group">
                   <Image
                     src={product.images[selectedImage]}
-                    alt={product.name}
+                    alt={localized.name}
                     fill
                     className="object-contain p-4 sm:p-8 group-hover:scale-105 transition-transform duration-500"
                     priority
                   />
                   {discount > 0 && (
                     <div className="absolute top-3 left-3 sm:top-4 sm:left-4 bg-amber-500 text-black text-[10px] sm:text-xs font-black px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full shadow">
-                      -{discount}% OFF
+                      -{discount}% {dict.common.off}
                     </div>
                   )}
                   <button className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 p-2 sm:p-2.5 rounded-full bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md hover:bg-white dark:hover:bg-zinc-700 transition-colors shadow">
@@ -184,18 +194,18 @@ function ProductDetailContent({ slug }: { slug: string }) {
             <div className="flex items-center gap-2 text-xs">
               <span className="font-bold text-amber-500 uppercase tracking-widest">{product.brand}</span>
               <span className="text-zinc-300 dark:text-zinc-700">•</span>
-              <span className="text-zinc-500">{product.category}</span>
+              <span className="text-zinc-500">{localized.category}</span>
               {product.has360View && (
                 <span className="ml-1 text-[10px] bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-2 py-0.5 rounded-full font-bold">
-                  360° View
+                  {dict.product.view360}
                 </span>
               )}
             </div>
 
             {/* Title */}
             <div>
-              <h1 className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-white leading-tight">{product.name}</h1>
-              <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1.5 italic">{product.tagline}</p>
+              <h1 className="text-2xl sm:text-3xl font-black text-zinc-900 dark:text-white leading-tight">{localized.name}</h1>
+              <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1.5 italic">{localized.tagline}</p>
             </div>
 
             {/* Rating */}
@@ -206,7 +216,7 @@ function ProductDetailContent({ slug }: { slug: string }) {
                 ))}
               </div>
               <span className="text-xs sm:text-sm font-bold text-zinc-900 dark:text-white">{product.rating}</span>
-              <span className="text-[11px] sm:text-xs text-zinc-400">({product.reviewCount} verified reviews)</span>
+              <span className="text-[11px] sm:text-xs text-zinc-400">({product.reviewCount} {dict.product.reviews})</span>
             </div>
 
             {/* Pricing Block */}
@@ -219,13 +229,13 @@ function ProductDetailContent({ slug }: { slug: string }) {
                   <>
                     <span className="text-sm sm:text-lg text-zinc-400 line-through">{formatCurrency(product.mrp)}</span>
                     <span className="text-[10px] sm:text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold px-2 py-0.5 rounded-full">
-                      Save {formatCurrency(product.mrp - currentPrice)}
+                      {dict.product.saveAmount} {formatCurrency(product.mrp - currentPrice)}
                     </span>
                   </>
                 )}
               </div>
               <p className="text-[11px] sm:text-xs text-zinc-400 mt-1">
-                Inclusive of 18% GST • 24-Hour Express Kirana Delivery
+                {dict.common.gstIncluded} • {dict.product.deliveryEstimate}
               </p>
               <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-2">
                 <div className="flex items-center gap-1.5">
@@ -233,14 +243,14 @@ function ProductDetailContent({ slug }: { slug: string }) {
                   <span className={`text-[11px] sm:text-xs font-bold ${selectedWeight ? (Number(selectedWeight.stock ?? 0) > 0 ? "text-emerald-500" : "text-rose-500") : (product.inStock ? "text-emerald-500" : "text-rose-500")}`}>
                     {selectedWeight
                       ? (Number(selectedWeight.stock ?? 0) > 0
-                          ? `In Stock (${Number(selectedWeight.stock)} units left for ${selectedWeight.weight})`
-                          : `Out of Stock for ${selectedWeight.weight}`)
-                      : (product.inStock ? `In Stock (${product.stock} ${product.unit || "kg"} available)` : "Out of Stock")}
+                          ? `${dict.common.inStock} (${Number(selectedWeight.stock)} left for ${formatWeight(selectedWeight.weight)})`
+                          : `${dict.common.outOfStock} for ${formatWeight(selectedWeight.weight)}`)
+                      : (product.inStock ? `${dict.common.inStock} (${product.stock} available)` : dict.common.outOfStock)}
                   </span>
                 </div>
                 {product.weight && (
                   <span className="text-[10px] sm:text-xs font-extrabold bg-amber-500/10 text-amber-700 dark:text-amber-300 px-2 sm:px-2.5 py-0.5 rounded-full border border-amber-500/20">
-                    Net: {product.weight}
+                    Net: {formatWeight(product.weight)}
                   </span>
                 )}
               </div>
@@ -252,11 +262,11 @@ function ProductDetailContent({ slug }: { slug: string }) {
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-black text-zinc-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
                     <PackageCheck className="w-4 h-4 text-amber-500" />
-                    Select Pack Size / Weight:
+                    {dict.product.selectWeight}:
                   </label>
                   {selectedWeight && (
                     <span className={`text-[11px] sm:text-xs font-black ${Number(selectedWeight.stock ?? 0) > 0 ? "text-amber-600 dark:text-amber-400" : "text-rose-500"}`}>
-                      {selectedWeight.weight} ({Number(selectedWeight.stock ?? 0) > 0 ? `${selectedWeight.stock} units left` : "0 stock"})
+                      {formatWeight(selectedWeight.weight)} ({Number(selectedWeight.stock ?? 0) > 0 ? `${selectedWeight.stock} left` : "0 stock"})
                     </span>
                   )}
                 </div>
@@ -282,7 +292,7 @@ function ProductDetailContent({ slug }: { slug: string }) {
                         }`}
                       >
                         <div className="flex items-center justify-between gap-1">
-                          <span className="text-xs font-black truncate">{opt.weight}</span>
+                          <span className="text-xs font-black truncate">{formatWeight(opt.weight)}</span>
                           {isSelected && (
                             <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500 flex-shrink-0" />
                           )}
@@ -313,7 +323,7 @@ function ProductDetailContent({ slug }: { slug: string }) {
             {product.variants && product.variants.length > 0 && (
               <div className="pt-1">
                 <label className="block text-xs font-black text-zinc-900 dark:text-white uppercase tracking-wider mb-2 sm:mb-3">
-                  Select Finish / Variant:
+                  {dict.product.weightVariant}:
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {product.variants.map((v) => (
@@ -344,7 +354,7 @@ function ProductDetailContent({ slug }: { slug: string }) {
 
             {/* Quantity Selector */}
             <div className="flex items-center gap-3 pt-1">
-              <label className="text-xs font-black text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">Quantity:</label>
+              <label className="text-xs font-black text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">{dict.product.quantity}:</label>
               <div className="flex items-center gap-2 sm:gap-3 border border-zinc-200 dark:border-zinc-800 rounded-xl sm:rounded-2xl px-3 sm:px-4 py-2 bg-zinc-50/50 dark:bg-zinc-900/50 shadow-xs">
                 <button
                   disabled={quantity <= 1 || !isWeightInStock}
@@ -371,31 +381,32 @@ function ProductDetailContent({ slug }: { slug: string }) {
               <button
                 onClick={() => {
                   addToCart(product, quantity, selectedVariant, selectedWeight);
-                  toast.success(`Added ${quantity} × ${product.name} ${selectedWeight ? `(${selectedWeight.weight})` : ""} to Cart! 🎉`);
+                  toast.success(`${dict.product.addedToCart} (${quantity} × ${localized.name} ${selectedWeight ? `[${formatWeight(selectedWeight.weight)}]` : ""})`);
                 }}
                 disabled={!isWeightInStock || currentWeightStock <= 0}
                 className="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 text-black font-black text-sm uppercase tracking-wider hover:from-amber-400 hover:to-amber-500 transition-all shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <ShoppingBag className="w-5 h-5" />
-                Add to Cart
+                {isWeightInStock ? dict.product.addToCart : dict.common.outOfStock}
               </button>
               <button
                 onClick={() => {
                   toggleWishlist(product);
-                  toast.success(isWishlisted ? "Removed from Wishlist" : "Saved to Wishlist ❤️");
+                  toast.success(isWishlisted ? (language === "hi" ? "हटाया गया" : "Removed from Wishlist") : (language === "hi" ? "पसंदीदा सूची में जोड़ा गया ❤️" : "Saved to Wishlist ❤️"));
                 }}
                 className={`p-4 rounded-2xl border-2 transition-all ${
                   isWishlisted
                     ? "border-rose-500 bg-rose-500/10 text-rose-500"
                     : "border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-rose-500 hover:text-rose-500"
                 }`}
+                title={dict.nav.wishlist}
               >
                 <Heart className={`w-5 h-5 ${isWishlisted ? "fill-rose-500" : ""}`} />
               </button>
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(window.location.href);
-                  toast.success("Product link copied!");
+                  toast.success(language === "hi" ? "उत्पाद लिंक कॉपी किया गया!" : "Product link copied!");
                 }}
                 className="p-4 rounded-2xl border-2 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-amber-500 hover:text-amber-500 transition-all"
               >
@@ -406,22 +417,22 @@ function ProductDetailContent({ slug }: { slug: string }) {
             {/* Trust Badges */}
             <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-zinc-200 dark:border-zinc-800">
               {[
-                { icon: Shield, label: "100% Pure", sub: "Farm tested" },
-                { icon: Truck, label: "Express Kirana", sub: "24-hr delivery" },
-                { icon: RefreshCw, label: "7-Day Return", sub: "Easy refund" },
+                { icon: Shield, label: dict.home.freshGuaranteed, sub: dict.home.statOrganicLabel },
+                { icon: Truck, label: dict.home.expressDelivery, sub: dict.home.statExpressLabel },
+                { icon: RefreshCw, label: dict.home.easyReturns, sub: dict.nav.returns },
               ].map(({ icon: Icon, label, sub }) => (
                 <div key={label} className="text-center p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-black/5 dark:border-white/10">
                   <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 mx-auto mb-1" />
-                  <div className="text-[10px] sm:text-[11px] font-bold text-zinc-900 dark:text-white">{label}</div>
-                  <div className="text-[9px] sm:text-[10px] text-zinc-500">{sub}</div>
+                  <div className="text-[10px] sm:text-[11px] font-bold text-zinc-900 dark:text-white line-clamp-1">{label}</div>
+                  <div className="text-[9px] sm:text-[10px] text-zinc-500 line-clamp-1">{sub}</div>
                 </div>
               ))}
             </div>
 
             {/* SKU & Stock info */}
             <div className="text-[11px] sm:text-xs text-zinc-400 space-y-0.5 pt-1">
-              <p>SKU: <span className="font-mono font-bold text-zinc-700 dark:text-zinc-300">{selectedVariant?.sku || product.sku}</span></p>
-              <p>Weight: {selectedWeight?.weight || product.weight}</p>
+              <p>{dict.product.sku}: <span className="font-mono font-bold text-zinc-700 dark:text-zinc-300">{selectedVariant?.sku || product.sku}</span></p>
+              <p>{dict.product.weightVariant}: {formatWeight(selectedWeight?.weight || product.weight)}</p>
             </div>
           </div>
         </div>
@@ -442,19 +453,23 @@ function ProductDetailContent({ slug }: { slug: string }) {
                 {tab === "overview" && <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4 inline mr-1" />}
                 {tab === "specs" && <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 inline mr-1" />}
                 {tab === "reviews" && <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 inline mr-1" />}
-                {tab}
+                {tab === "overview"
+                  ? (language === "hi" ? "उत्पाद विवरण" : "Overview")
+                  : tab === "specs"
+                  ? (language === "hi" ? "विनिर्देश" : "Specifications")
+                  : (language === "hi" ? "ग्राहक समीक्षाएं" : "Customer Reviews")}
               </button>
             ))}
           </div>
 
           {activeTab === "overview" && (
             <div className="max-w-3xl space-y-4 text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
-              <p>{product.description}</p>
-              {product.features && product.features.length > 0 && (
+              <p>{localized.description}</p>
+              {localized.features && localized.features.length > 0 && (
                 <div className="pt-3">
-                  <h3 className="font-bold text-zinc-900 dark:text-white mb-2">Key Highlights</h3>
+                  <h3 className="font-bold text-zinc-900 dark:text-white mb-2">{dict.product.highlights}</h3>
                   <ul className="space-y-1.5">
-                    {product.features.map((f, i) => (
+                    {localized.features.map((f, i) => (
                       <li key={i} className="flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-amber-500 flex-shrink-0" />
                         <span>{f}</span>
@@ -468,15 +483,15 @@ function ProductDetailContent({ slug }: { slug: string }) {
 
           {activeTab === "specs" && (
             <div className="max-w-2xl">
-              <h3 className="text-sm sm:text-lg font-black text-zinc-900 dark:text-white mb-4">Technical Specifications</h3>
+              <h3 className="text-sm sm:text-lg font-black text-zinc-900 dark:text-white mb-4">{dict.product.specifications}</h3>
               <div className="border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden">
                 {[
-                  { label: "Category", value: product.category },
-                  { label: "Brand", value: product.brand },
-                  { label: "SKU", value: selectedVariant?.sku || product.sku },
-                  { label: "Selected Weight", value: selectedWeight?.weight || product.weight || "N/A" },
-                  { label: "Stock Units Available", value: `${currentWeightStock} units` },
-                  { label: "Organic Quality", value: "100% Pesticide Free Certified" },
+                  { label: dict.product.category, value: localized.category },
+                  { label: dict.product.brand, value: product.brand },
+                  { label: dict.product.sku, value: selectedVariant?.sku || product.sku },
+                  { label: dict.product.weightVariant, value: formatWeight(selectedWeight?.weight || product.weight) || "N/A" },
+                  { label: dict.common.inStock, value: `${currentWeightStock} units` },
+                  { label: dict.home.freshGuaranteed, value: "100% Pesticide Free Certified" },
                 ].map(({ label, value }) => (
                   <div key={label} className="flex justify-between px-4 py-2.5 text-xs sm:text-sm border-b border-zinc-100 dark:border-zinc-800 last:border-b-0">
                     <span className="text-zinc-500 font-medium">{label}</span>
@@ -490,16 +505,16 @@ function ProductDetailContent({ slug }: { slug: string }) {
           {activeTab === "reviews" && (
             <div className="max-w-2xl space-y-3">
               {[
-                { name: "Rajesh Sharma", rating: 5, comment: "Top quality A2 ghee and basmati. Aroma is authentic and delicious.", date: "2 days ago" },
-                { name: "Priya Mehta", rating: 5, comment: "Delivered in 24 hours in sealed packaging. Very impressed with the quality!", date: "1 week ago" },
-                { name: "Anand Verma", rating: 4, comment: "Good quality pulses and spices. Fresh harvest quality.", date: "2 weeks ago" },
+                { name: "Rajesh Sharma", rating: 5, comment: language === "hi" ? "उत्कृष्ट गुणवत्ता वाला A2 घी और चावल। बहुत स्वादिष्ट और शुद्ध।" : "Top quality A2 ghee and basmati. Aroma is authentic and delicious.", date: "2 days ago" },
+                { name: "Priya Mehta", rating: 5, comment: language === "hi" ? "24 घंटे में सुरक्षित सीलबंद पैकिंग में मिला। बहुत प्रभावित हुई!" : "Delivered in 24 hours in sealed packaging. Very impressed with the quality!", date: "1 week ago" },
+                { name: "Anand Verma", rating: 4, comment: language === "hi" ? "दालों और मसालों की बहुत अच्छी ताज़गी।" : "Good quality pulses and spices. Fresh harvest quality.", date: "2 weeks ago" },
               ].map((review, i) => (
                 <div key={i} className="p-4 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <span className="font-bold text-xs sm:text-sm text-zinc-900 dark:text-white">{review.name}</span>
                       <span className="ml-2 text-[9px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold px-2 py-0.5 rounded-full">
-                        ✓ Verified Purchase
+                        ✓ {language === "hi" ? "प्रमाणित ख़रीदार" : "Verified Purchase"}
                       </span>
                     </div>
                     <div className="flex text-amber-400">
@@ -517,7 +532,7 @@ function ProductDetailContent({ slug }: { slug: string }) {
         </div>
       </div>
 
-      {/* ===== STICKY MOBILE BOTTOM ACTION BAR (Flipkart/Amazon style) ===== */}
+      {/* ===== STICKY MOBILE BOTTOM ACTION BAR ===== */}
       <div className="lg:hidden fixed bottom-[52px] left-0 right-0 z-30 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl border-t border-zinc-200/90 dark:border-zinc-800/90 px-3 py-2.5 flex items-center justify-between gap-2 shadow-[0_-6px_20px_rgba(0,0,0,0.12)]">
         <div className="flex flex-col">
           <div className="flex items-baseline gap-1.5">
@@ -526,18 +541,18 @@ function ProductDetailContent({ slug }: { slug: string }) {
             </span>
             {selectedWeight && (
               <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
-                ({selectedWeight.weight})
+                ({formatWeight(selectedWeight.weight)})
               </span>
             )}
           </div>
-          <span className="text-[9px] text-zinc-400 font-medium">Free 24-hr Delivery</span>
+          <span className="text-[9px] text-zinc-400 font-medium">{dict.home.expressDelivery}</span>
         </div>
 
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => {
               toggleWishlist(product);
-              toast.success(isWishlisted ? "Removed" : "Wishlisted ❤️");
+              toast.success(isWishlisted ? (language === "hi" ? "हटाया गया" : "Removed") : (language === "hi" ? "पसंदीदा सूची में जोड़ा गया ❤️" : "Wishlisted ❤️"));
             }}
             className={`p-2.5 rounded-xl border transition-all active:scale-95 ${
               isWishlisted
@@ -551,13 +566,13 @@ function ProductDetailContent({ slug }: { slug: string }) {
           <button
             onClick={() => {
               addToCart(product, quantity, selectedVariant, selectedWeight);
-              toast.success(`Added to Cart! 🎉`);
+              toast.success(`${dict.product.addedToCart} 🎉`);
             }}
             disabled={!isWeightInStock || currentWeightStock <= 0}
             className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-black font-black text-xs uppercase tracking-wider shadow-md hover:from-amber-400 hover:to-amber-500 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
           >
             <ShoppingBag className="w-4 h-4" />
-            <span>{isWeightInStock ? "Add to Cart" : "Out of Stock"}</span>
+            <span>{isWeightInStock ? dict.product.addToCart : dict.common.outOfStock}</span>
           </button>
         </div>
       </div>

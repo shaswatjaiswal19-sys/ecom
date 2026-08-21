@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useOrderStore } from "@/lib/store";
 import { formatCurrency } from "@/lib/utils";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 import { MOCK_ORDERS } from "@/lib/mockData";
 import { getOrdersFromStore } from "@/lib/firestore";
 import { Search, Package, Truck, CheckCircle2, Clock, XCircle, ShieldCheck, MapPin, Calendar, ArrowRight, Download, Phone, Map } from "lucide-react";
@@ -28,6 +29,7 @@ function OrderTrackerContent() {
   const searchParams = useSearchParams();
   const initialOrderId = searchParams.get("orderId") || searchParams.get("order") || "";
   const { orders: storeOrders, setOrders } = useOrderStore();
+  const { dict, formatStatus, formatWeight, language } = useLanguage();
   const [searchQuery, setSearchQuery] = useState(initialOrderId);
   const [searchedOrder, setSearchedOrder] = useState<any | null>(null);
   const [hasSearched, setHasSearched] = useState(Boolean(initialOrderId));
@@ -95,11 +97,11 @@ function OrderTrackerContent() {
         {/* Header */}
         <div className="text-center space-y-3">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-extrabold uppercase tracking-widest border border-amber-500/20">
-            <Truck className="w-3.5 h-3.5" /> 24-Hour Express Order Tracker
+            <Truck className="w-3.5 h-3.5" /> {language === "hi" ? "24-घंटे एक्सप्रेस ऑर्डर ट्रैकर" : "24-Hour Express Order Tracker"}
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-zinc-900 dark:text-white">Track Your Product Order</h1>
+          <h1 className="text-3xl sm:text-4xl font-black text-zinc-900 dark:text-white">{dict.nav.trackOrder}</h1>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-xl mx-auto">
-            Enter your Order ID (e.g. <strong className="text-amber-500">MT-2026-8812</strong>) or phone number to view real-time delivery status.
+            {language === "hi" ? "वास्तविक समय स्थिति देखने के लिए अपना ऑर्डर नंबर या फ़ोन दर्ज करें।" : "Enter your Order ID (e.g. MT-2026-8812) or phone number to view real-time delivery status."}
           </p>
         </div>
 
@@ -110,7 +112,7 @@ function OrderTrackerContent() {
               <Search className="w-5 h-5 text-zinc-400 absolute left-4 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Enter Order # (e.g. MT-2026-8812) or Phone (+91...)"
+                placeholder={language === "hi" ? "ऑर्डर # (उदा. MT-2026-8812) या फ़ोन दर्ज करें..." : "Enter Order # (e.g. MT-2026-8812) or Phone (+91...)"}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-900 dark:text-white text-sm font-semibold outline-none focus:border-amber-500 transition-colors"
@@ -120,12 +122,12 @@ function OrderTrackerContent() {
               type="submit"
               className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-amber-500 text-zinc-950 font-bold text-sm hover:bg-amber-400 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20"
             >
-              Track Order <ArrowRight className="w-4 h-4" />
+              {language === "hi" ? "ऑर्डर ट्रैक करें" : "Track Order"} <ArrowRight className="w-4 h-4" />
             </button>
           </form>
         </div>
 
-        {/* Live GPS Satellite Tracking Map (Amazon/Flipkart Experience) */}
+        {/* Live GPS Satellite Tracking Map */}
         <LiveTrackingMap
           orderNumber={activeOrder.orderNumber}
           status={activeOrder.status}
@@ -137,24 +139,24 @@ function OrderTrackerContent() {
           {/* Order Header Banner */}
           <div className="p-6 border-b border-zinc-100 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-amber-500/5 via-transparent to-transparent">
             <div>
-              <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Tracking Result</span>
+              <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">{language === "hi" ? "ट्रैकिंग परिणाम" : "Tracking Result"}</span>
               <h2 className="text-xl font-black text-zinc-900 dark:text-white flex items-center gap-2 mt-0.5">
-                Order #{activeOrder.orderNumber}
+                {language === "hi" ? "ऑर्डर" : "Order"} #{activeOrder.orderNumber}
               </h2>
-              <p className="text-xs text-zinc-500 mt-1">Placed on {new Date(activeOrder.createdAt).toLocaleDateString("en-IN", { weekday: "short", year: "numeric", month: "long", day: "numeric" })}</p>
+              <p className="text-xs text-zinc-500 mt-1">{language === "hi" ? "ऑर्डर की तारीख" : "Placed on"} {new Date(activeOrder.createdAt).toLocaleDateString(language === "hi" ? "hi-IN" : "en-IN", { weekday: "short", year: "numeric", month: "long", day: "numeric" })}</p>
             </div>
 
             <div className="flex items-center gap-3">
               <span className={`flex items-center gap-1.5 text-xs font-black px-4 py-2 rounded-full ${cfg.bg} ${cfg.color}`}>
                 <StatusIcon className="w-4 h-4" />
-                {activeOrder.status}
+                {formatStatus(activeOrder.status)}
               </span>
             </div>
           </div>
 
           {/* Progress Timeline */}
           <div className="p-6 sm:p-8 border-b border-zinc-100 dark:border-zinc-800 space-y-6">
-            <h3 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">Live Delivery Timeline</h3>
+            <h3 className="text-sm font-bold text-zinc-900 dark:text-white uppercase tracking-wider">{language === "hi" ? "लाइव डिलीवरी टाइमलाइन" : "Live Delivery Timeline"}</h3>
             <div className="flex items-center justify-between relative py-2">
               <div className="absolute top-5 left-0 right-0 h-1 bg-zinc-200 dark:bg-zinc-800 z-0" />
               <div
@@ -177,7 +179,7 @@ function OrderTrackerContent() {
                       i <= currentStepIdx ? "text-amber-500 font-extrabold" : "text-zinc-400"
                     }`}
                   >
-                    {s}
+                    {formatStatus(s as any)}
                   </span>
                 </div>
               ))}
@@ -188,8 +190,8 @@ function OrderTrackerContent() {
               <div className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800 flex items-center gap-3">
                 <Calendar className="w-5 h-5 text-amber-500 flex-shrink-0" />
                 <div>
-                  <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Estimated Delivery</span>
-                  <p className="text-xs font-black text-zinc-900 dark:text-white">{activeOrder.estimatedDelivery || "Within 24 Hours"}</p>
+                  <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">{dict.orders.estimatedDelivery}</span>
+                  <p className="text-xs font-black text-zinc-900 dark:text-white">{activeOrder.estimatedDelivery || (language === "hi" ? "24 घंटों के भीतर" : "Within 24 Hours")}</p>
                 </div>
               </div>
 
@@ -197,7 +199,7 @@ function OrderTrackerContent() {
                 <div className="p-4 rounded-2xl bg-blue-500/5 border border-blue-500/20 flex items-center gap-3">
                   <Truck className="w-5 h-5 text-blue-500 flex-shrink-0" />
                   <div>
-                    <span className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">Express Courier ID</span>
+                    <span className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">{language === "hi" ? "एक्सप्रेस कूरियर आईडी" : "Express Courier ID"}</span>
                     <p className="text-xs font-mono font-black text-blue-600 dark:text-blue-400">{activeOrder.trackingNumber}</p>
                   </div>
                 </div>

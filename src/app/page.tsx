@@ -17,9 +17,10 @@ import { MOCK_BRANDS } from "@/lib/mockData";
 import { useProductStore, useCategoryStore } from "@/lib/store";
 import { getProductsFromStore, getCategoriesFromStore } from "@/lib/firestore";
 import { formatCurrency } from "@/lib/utils";
+import { useLanguage } from "@/components/providers/LanguageProvider";
 import { Product } from "@/types";
 
-const MARQUEE_ITEMS = [
+const MARQUEE_ITEMS_EN = [
   "🌾 100% Shudh A2 Gir Cow Bilona Ghee",
   "🍚 2-Year Aged Royal Basmati Rice",
   "🥭 Hand-Picked Ratnagiri Alphonso Mangoes",
@@ -30,7 +31,18 @@ const MARQUEE_ITEMS = [
   "🛡️ Zero Pesticides & Direct Farm-Sourced",
 ];
 
-const FAQS = [
+const MARQUEE_ITEMS_HI = [
+  "🌾 100% शुद्ध A2 गिर गाय बिलोना घी",
+  "🍚 2-साल पुराना रॉयल बासमती चावल",
+  "🥭 ताज़ा चुने हुए रत्नागिरी हापुस आम",
+  "🌿 शुद्ध कच्ची घानी सरसों और तिल का तेल",
+  "🫚 जैविक लकाडोंग उच्च-कर्क्यूमिन हल्दी",
+  "🍯 हिमालयी शुद्ध प्राकृतिक शहद",
+  "🚚 24 घंटे में सुपरफ़ास्ट घर-पहुंच डिलीवरी",
+  "🛡️ 100% जैविक और कीटनाशक रहित",
+];
+
+const FAQS_EN = [
   {
     q: "How do you guarantee 100% organic farm freshness?",
     a: "We partner directly with certified organic farms across India. All produce and grains undergo strict pesticide residue testing before being packed in climate-controlled, vacuum-sealed food grade containers.",
@@ -49,9 +61,29 @@ const FAQS = [
   },
 ];
 
+const FAQS_HI = [
+  {
+    q: "आप 100% ऑर्गेनिक ताज़गी की गारंटी कैसे देते हैं?",
+    a: "हम पूरे भारत के प्रमाणित जैविक किसानों से सीधे उत्पाद प्राप्त करते हैं। पैकिंग से पहले सभी अनाजों और उत्पादों का कड़ा लैब परीक्षण किया जाता है।",
+  },
+  {
+    q: "आपकी किराना एक्सप्रेस डिलीवरी में कितना समय लगता है?",
+    a: "हम 24 घंटे के भीतर सीधे आपके दरवाजे तक डिलीवरी करते हैं। दोपहर 4 बजे से पहले किए गए ऑर्डर उसी दिन सुरक्षित कोल्ड-चेन वाहनों में रवाना होते हैं।",
+  },
+  {
+    q: "ताज़ा उत्पादों के लिए आपकी वापसी (Return) नीति क्या है?",
+    a: "हम 100% ताज़गी गारंटी देते हैं। यदि कोई वस्तु आपकी अपेक्षाओं पर खरी नहीं उतरती, तो 7 दिनों के भीतर बताएं, हम तुरंत रिप्लेसमेंट या पूरा रिफंड करेंगे।",
+  },
+  {
+    q: "क्या आप थोक (Wholesale) छूट प्रदान करते हैं?",
+    a: "हाँ! बड़े परिवारों और थोक खरीदारी के लिए हम विशेष मंडी थोक मूल्य प्रदान करते हैं। आप प्रत्येक उत्पाद पर थोक छूट देख सकते हैं।",
+  },
+];
+
 export default function HomePage() {
   const { products: storeProducts, setProducts } = useProductStore();
   const { categories: storeCategories, setCategories: storeSetCategories } = useCategoryStore();
+  const { dict, language, formatCategory } = useLanguage();
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
 
@@ -105,6 +137,8 @@ export default function HomePage() {
   const flashSaleProducts = storeProducts.filter((p) => p.isFlashSale);
   const featuredProducts = storeProducts.filter((p) => p.isFeatured || true);
   const flashSaleEnd = "2026-12-31T23:59:59Z";
+  const marqueeItems = language === "hi" ? MARQUEE_ITEMS_HI : MARQUEE_ITEMS_EN;
+  const faqs = language === "hi" ? FAQS_HI : FAQS_EN;
 
   return (
     <div className="relative overflow-hidden selection:bg-amber-500 selection:text-black">
@@ -133,7 +167,7 @@ export default function HomePage() {
             className="inline-flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-[11px] sm:text-sm font-black tracking-wider uppercase shadow-xs"
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
-            <span>India's Premier Organic Kirana Store</span>
+            <span>{dict.home.badge}</span>
           </motion.div>
 
           {/* Heading & Subtitle */}
@@ -144,11 +178,11 @@ export default function HomePage() {
             className="space-y-3 sm:space-y-5 max-w-3xl"
           >
             <h1 className="text-3xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1] text-zinc-900 dark:text-white">
-              Pure Kirana. <br className="hidden sm:inline" />
-              <span className="gold-gradient-text">Farm Fresh Daily.</span>
+              {dict.home.heroTitlePart1} <br className="hidden sm:inline" />
+              <span className="gold-gradient-text">{dict.home.heroTitlePart2}</span>
             </h1>
             <p className="text-zinc-600 dark:text-zinc-300 text-xs sm:text-base lg:text-lg leading-relaxed max-w-2xl mx-auto font-medium">
-              Experience authentic purity — A2 Gir cow Bilona ghee, 2-year aged Royal Basmati rice, hand-picked mangoes, cold-pressed oils, and heritage spices delivered straight to your kitchen in 24 hours.
+              {dict.home.heroSubtitle}
             </p>
           </motion.div>
 
@@ -163,15 +197,15 @@ export default function HomePage() {
               href="/shop"
               className="w-full sm:w-auto px-7 py-3.5 sm:px-8 sm:py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-black text-xs sm:text-base transition-all shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 hover:gap-3 group active:scale-98"
             >
-              <span>Shop Kirana Essentials</span>
+              <span>{dict.home.shopEssentials}</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
               href="/shop?filter=flash-sale"
-              className="w-full sm:w-auto px-6 py-3 sm:px-7 sm:py-4 rounded-2xl bg-zinc-100 dark:bg-zinc-850 text-zinc-900 dark:text-white hover:bg-zinc-200 dark:hover:bg-zinc-800 font-bold text-xs sm:text-base transition-all border border-zinc-200 dark:border-zinc-700 flex items-center justify-center gap-2 active:scale-98"
+              className="w-full sm:w-auto px-6 py-3 sm:px-7 sm:py-4 rounded-2xl bg-zinc-100 dark:bg-zinc-900 text-zinc-900 dark:text-white hover:bg-zinc-200 dark:hover:bg-zinc-800 font-bold text-xs sm:text-base transition-all border border-zinc-200 dark:border-zinc-700/80 shadow-sm flex items-center justify-center gap-2 active:scale-98"
             >
               <Flame className="w-4 h-4 text-amber-500" />
-              <span>Today's Flash Deals</span>
+              <span>{dict.home.todaysFlashDeals}</span>
             </Link>
           </motion.div>
 
@@ -183,16 +217,16 @@ export default function HomePage() {
             className="grid grid-cols-3 gap-4 sm:gap-16 pt-5 sm:pt-8 border-t border-zinc-200 dark:border-zinc-800/80 max-w-xl w-full"
           >
             <div className="space-y-0.5 text-center">
-              <div className="text-xl sm:text-3xl font-black text-amber-500">24-Hr</div>
-              <div className="text-[10px] sm:text-sm text-zinc-500 dark:text-zinc-400 font-bold">Express Kirana</div>
+              <div className="text-xl sm:text-3xl font-black text-amber-500">{dict.home.statExpress}</div>
+              <div className="text-[10px] sm:text-sm text-zinc-500 dark:text-zinc-400 font-bold">{dict.home.statExpressLabel}</div>
             </div>
             <div className="space-y-0.5 text-center">
-              <div className="text-xl sm:text-3xl font-black text-emerald-500">100%</div>
-              <div className="text-[10px] sm:text-sm text-zinc-500 dark:text-zinc-400 font-bold">Shudh & Organic</div>
+              <div className="text-xl sm:text-3xl font-black text-emerald-500">{dict.home.statOrganic}</div>
+              <div className="text-[10px] sm:text-sm text-zinc-500 dark:text-zinc-400 font-bold">{dict.home.statOrganicLabel}</div>
             </div>
             <div className="space-y-0.5 text-center">
-              <div className="text-xl sm:text-3xl font-black text-amber-500">500K+</div>
-              <div className="text-[10px] sm:text-sm text-zinc-500 dark:text-zinc-400 font-bold">Happy Homes</div>
+              <div className="text-xl sm:text-3xl font-black text-amber-500">{dict.home.statHappy}</div>
+              <div className="text-[10px] sm:text-sm text-zinc-500 dark:text-zinc-400 font-bold">{dict.home.statHappyLabel}</div>
             </div>
           </motion.div>
         </motion.div>
@@ -201,7 +235,7 @@ export default function HomePage() {
       {/* ===== CONTINUOUS MOVING KIRANA MARQUEE TICKER ===== */}
       <div className="relative py-2.5 sm:py-3.5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-zinc-950 font-black text-[11px] sm:text-xs uppercase tracking-wider overflow-hidden shadow-md">
         <div className="animate-kirana-marquee whitespace-nowrap gap-8 font-extrabold cursor-default">
-          {MARQUEE_ITEMS.concat(MARQUEE_ITEMS).map((item, idx) => (
+          {marqueeItems.concat(marqueeItems).map((item, idx) => (
             <span key={idx} className="flex items-center gap-3 pr-8">
               <span>{item}</span>
               <span className="text-black/40">•</span>
@@ -215,13 +249,15 @@ export default function HomePage() {
         <section className="py-10 sm:py-20 max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 space-y-6 sm:space-y-12">
           <div className="flex items-end justify-between gap-4">
             <div className="space-y-0.5">
-              <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-amber-500">Farm Direct Supermarket</span>
+              <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-amber-500">
+                {language === "hi" ? "सीधे खेत से सुपरमार्केट" : "Farm Direct Supermarket"}
+              </span>
               <h2 className="text-xl sm:text-4xl font-black text-zinc-900 dark:text-white">
-                Explore Kirana Aisles
+                {dict.home.shopByCategory}
               </h2>
             </div>
             <Link href="/shop" className="text-xs font-bold text-amber-500 hover:underline flex items-center gap-0.5 flex-shrink-0">
-              View All ({displayCategories.length}) <ChevronRight className="w-3.5 h-3.5" />
+              {dict.common.viewAll} ({displayCategories.length}) <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
@@ -247,10 +283,10 @@ export default function HomePage() {
 
                   <div className="relative z-10 space-y-1 sm:space-y-2">
                     <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-amber-400 bg-black/60 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full backdrop-blur-md inline-block border border-amber-500/30">
-                      {cat.itemCount || 0}+ Items
+                      {cat.itemCount || 0}+ {dict.cart.items}
                     </span>
                     <h3 className="text-sm sm:text-xl font-black group-hover:text-amber-400 transition-colors leading-tight line-clamp-1 sm:line-clamp-none">
-                      {cat.name}
+                      {formatCategory(cat.name)}
                     </h3>
                     <p className="text-[10px] sm:text-xs text-zinc-300 line-clamp-1 sm:line-clamp-2 leading-relaxed hidden xs:block">{cat.description}</p>
                   </div>
@@ -268,9 +304,9 @@ export default function HomePage() {
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-6 border-b border-zinc-800 pb-4 sm:pb-8">
               <div className="space-y-1 sm:space-y-2">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-amber-500 text-black font-black text-[10px] sm:text-xs uppercase tracking-wider">
-                  <Flame className="w-3.5 h-3.5 fill-black" /> Supermarket Daily Flash Deal
+                  <Flame className="w-3.5 h-3.5 fill-black" /> {dict.home.flashSaleTitle}
                 </div>
-                <h2 className="text-xl sm:text-4xl font-black">Limited-Time Organic Offers</h2>
+                <h2 className="text-xl sm:text-4xl font-black">{dict.home.flashSaleSubtitle}</h2>
               </div>
               <CountdownTimer endsAt={flashSaleEnd} targetDate={flashSaleEnd} />
             </div>
@@ -293,13 +329,15 @@ export default function HomePage() {
         <section className="py-10 sm:py-20 max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 space-y-6 sm:space-y-12">
           <div className="flex items-end justify-between gap-4">
             <div className="space-y-0.5">
-              <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-amber-500">Customer Favorites</span>
+              <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-amber-500">
+                {language === "hi" ? "ग्राहकों की पसंद" : "Customer Favorites"}
+              </span>
               <h2 className="text-xl sm:text-4xl font-black text-zinc-900 dark:text-white">
-                Best Selling Kirana Staples
+                {dict.home.featuredProducts}
               </h2>
             </div>
             <Link href="/shop" className="text-xs font-bold text-amber-500 hover:underline flex items-center gap-0.5 flex-shrink-0">
-              View All ({storeProducts.length}) <ChevronRight className="w-3.5 h-3.5" />
+              {dict.common.viewAll} ({storeProducts.length}) <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
@@ -315,18 +353,21 @@ export default function HomePage() {
         </section>
       )}
 
-
       {/* ===== FAQ SECTION ===== */}
       <section className="py-20 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="text-center space-y-3">
-          <h2 className="text-3xl font-black text-zinc-900 dark:text-white">Kirana Supermarket FAQ</h2>
+          <h2 className="text-3xl font-black text-zinc-900 dark:text-white">
+            {language === "hi" ? "किराना सुपरमार्केट अक्सर पूछे जाने वाले सवाल" : "Kirana Supermarket FAQ"}
+          </h2>
           <p className="text-zinc-500 dark:text-zinc-400 text-sm">
-            Answers to common questions about fresh organic deliveries, sourcing, and returns.
+            {language === "hi"
+              ? "ताज़ा जैविक डिलीवरी, स्रोत और वापसी से संबंधित सामान्य प्रश्नों के उत्तर।"
+              : "Answers to common questions about fresh organic deliveries, sourcing, and returns."}
           </p>
         </div>
 
         <div className="space-y-4">
-          {FAQS.map((faq, idx) => (
+          {faqs.map((faq, idx) => (
             <div
               key={idx}
               className="bg-white dark:bg-zinc-900 rounded-2xl border border-black/5 dark:border-white/10 shadow-sm overflow-hidden"
