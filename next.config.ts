@@ -20,14 +20,6 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react", "recharts", "framer-motion", "@clerk/nextjs"],
   },
-  async rewrites() {
-    return [
-      {
-        source: "/favicon.ico",
-        destination: "/icon.svg",
-      },
-    ];
-  },
 };
 
 export default nextConfig;
