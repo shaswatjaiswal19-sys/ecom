@@ -9,17 +9,15 @@ const secretKey =
   process.env.CLERK_SECRET_KEY ||
   "sk_test_BwI9MnM94NimhjGMlaBgEb3fqOlEt2pem4bjqgVpgu";
 
-const isProtectedRoute = createRouteMatcher([
-  "/account(.*)",
-  "/admin(.*)",
-]);
+const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
+const isAccountRoute = createRouteMatcher(["/account(.*)"]);
 
 let clerkHandler: any = null;
 try {
   clerkHandler = clerkMiddleware(
     async (auth, req) => {
-      if (isProtectedRoute(req)) {
-        // Session checks via Clerk
+      if (isAdminRoute(req) || isAccountRoute(req)) {
+        await auth.protect();
       }
     },
     {

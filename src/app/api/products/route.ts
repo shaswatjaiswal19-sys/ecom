@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getProductsFromStore, createProductInFirestore, updateProductInFirestore, deleteProductInFirestore } from "@/lib/firestore";
+import { verifyAdminApi, unauthorizedResponse } from "@/lib/adminAuthServer";
 
-// GET /api/products - Returns list of products with optional category/search filtering
+// GET /api/products - Returns list of products with optional category/search filtering (Public read)
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -29,9 +30,14 @@ export async function GET(request: Request) {
   }
 }
 
-// POST /api/products - Create a new product (Admin)
+// POST /api/products - Create a new product (Strict Admin Authorization)
 export async function POST(request: Request) {
   try {
+    const adminCheck = await verifyAdminApi();
+    if (!adminCheck.authorized) {
+      return unauthorizedResponse(adminCheck);
+    }
+
     const body = await request.json();
 
     if (!body.name || !body.price) {
@@ -45,9 +51,14 @@ export async function POST(request: Request) {
   }
 }
 
-// PUT /api/products - Update an existing product
+// PUT /api/products - Update an existing product (Strict Admin Authorization)
 export async function PUT(request: Request) {
   try {
+    const adminCheck = await verifyAdminApi();
+    if (!adminCheck.authorized) {
+      return unauthorizedResponse(adminCheck);
+    }
+
     const body = await request.json();
     const { id, ...updates } = body;
 
@@ -62,9 +73,14 @@ export async function PUT(request: Request) {
   }
 }
 
-// DELETE /api/products - Delete product by ID
+// DELETE /api/products - Delete product by ID (Strict Admin Authorization)
 export async function DELETE(request: Request) {
   try {
+    const adminCheck = await verifyAdminApi();
+    if (!adminCheck.authorized) {
+      return unauthorizedResponse(adminCheck);
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
@@ -78,3 +94,4 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ success: false, error: error.message || "Failed to delete product" }, { status: 500 });
   }
 }
+

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { verifyAdminApi, unauthorizedResponse } from "@/lib/adminAuthServer";
 import { getOrdersFromStore, createOrderInStore, updateOrderStatusInStore } from "@/lib/firestore";
 
 // GET /api/orders - Retrieve list of orders (Filtered by userId or orderId)
@@ -7,6 +8,14 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
     const orderId = searchParams.get("orderId");
+
+    // Retrieving all store orders requires admin authorization
+    if (!userId && !orderId) {
+      const adminCheck = await verifyAdminApi();
+      if (!adminCheck.authorized) {
+        return unauthorizedResponse(adminCheck);
+      }
+    }
 
     let orders = await getOrdersFromStore();
 
@@ -55,6 +64,11 @@ export async function POST(request: Request) {
 // PATCH /api/orders - Update order fulfillment status (Admin)
 export async function PATCH(request: Request) {
   try {
+    const adminCheck = await verifyAdminApi();
+    if (!adminCheck.authorized) {
+      return unauthorizedResponse(adminCheck);
+    }
+
     const body = await request.json();
     const { orderId, status, note } = body;
 

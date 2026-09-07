@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { verifyAdminApi, unauthorizedResponse } from "@/lib/adminAuthServer";
 import {
   getCategoriesFromStore,
   createCategoryInFirestore,
@@ -32,6 +33,11 @@ export async function GET(request: Request) {
 // POST /api/categories - Create a new category or brand
 export async function POST(request: Request) {
   try {
+    const adminCheck = await verifyAdminApi();
+    if (!adminCheck.authorized) {
+      return unauthorizedResponse(adminCheck);
+    }
+
     const body = await request.json();
     const { type, ...data } = body;
 
@@ -59,6 +65,11 @@ export async function POST(request: Request) {
 // DELETE /api/categories - Delete a category or brand by ID
 export async function DELETE(request: Request) {
   try {
+    const adminCheck = await verifyAdminApi();
+    if (!adminCheck.authorized) {
+      return unauthorizedResponse(adminCheck);
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
     const type = searchParams.get("type");

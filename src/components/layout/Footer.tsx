@@ -4,11 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { MessageSquare, Mail, ShieldCheck, Truck, RefreshCw, Award, Send, Apple, Wheat, Flame } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
+import { isClerkUserAdmin } from "@/lib/adminAuth";
 import toast from "react-hot-toast";
 
 export default function Footer() {
   const pathname = usePathname();
   const [email, setEmail] = useState("");
+  const { isLoaded, isSignedIn, user } = useUser();
+  const isAdmin = Boolean(isLoaded && isSignedIn && isClerkUserAdmin(user));
 
   if (pathname.startsWith("/admin") || pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up")) {
     return null;
@@ -125,7 +129,9 @@ export default function Footer() {
             <li><Link href="/account/returns" className="hover:text-white transition-colors">Fresh Returns & Refunds</Link></li>
             <li><Link href="/account/tickets" className="hover:text-white transition-colors">Support Portal</Link></li>
             <li><Link href="/faq" className="hover:text-white transition-colors">Grocery FAQ</Link></li>
-            <li><Link href="/admin" className="hover:text-amber-400 transition-colors font-bold">Admin Portal</Link></li>
+            {isAdmin && (
+              <li><Link href="/admin" className="hover:text-amber-400 transition-colors font-bold">Admin Portal</Link></li>
+            )}
           </ul>
         </div>
 

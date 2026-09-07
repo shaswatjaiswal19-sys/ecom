@@ -24,12 +24,7 @@ const ADMIN_NAV = [
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
-const ALLOWED_ADMIN_EMAILS = (
-  process.env.NEXT_PUBLIC_ADMIN_EMAILS ||
-  "admin@manojtraders.com,shaswat@gmail.com,shaswatjaiswal@gmail.com,concierge@manojtraders.com"
-)
-  .split(",")
-  .map((e) => e.trim().toLowerCase());
+import { isClerkUserAdmin } from "@/lib/adminAuth";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -37,31 +32,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { isLoaded, isSignedIn, user } = useUser();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const userEmail = user?.emailAddresses?.[0]?.emailAddress?.toLowerCase();
+  const userEmail = user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress;
 
-  // Clerk Metadata & Role Checks
-  const clerkRole = (user?.publicMetadata?.role as string)?.toLowerCase();
-  const clerkIsAdmin = Boolean(user?.publicMetadata?.isAdmin);
-  const clerkOrgAdmin = user?.organizationMemberships?.some(
-    (m) => m.role === "org:admin" || m.role === "admin"
-  );
+  // Strict Fail-Closed Admin Check: Only authorized email has access
+  const isAdmin = Boolean(isLoaded && isSignedIn && isClerkUserAdmin(user));
 
-  const isClerkAuthorizedAdmin = Boolean(
-    clerkRole === "admin" ||
-    clerkRole === "superadmin" ||
-    clerkIsAdmin ||
-    clerkOrgAdmin
-  );
-
-  const isEmailAuthorizedAdmin = Boolean(userEmail && ALLOWED_ADMIN_EMAILS.includes(userEmail));
-
-  // User is authorized if Clerk metadata gives access OR email is in allowed list
-  const isAdmin = Boolean(isSignedIn && (isClerkAuthorizedAdmin || isEmailAuthorizedAdmin));
   if (!isLoaded) {
     return (
       <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-6 space-y-4 animate-pulse">
         <div className="w-12 h-12 rounded-2xl bg-amber-500 flex items-center justify-center text-zinc-950 font-black text-xl shadow-lg">
-          S
+          MT
         </div>
         <div className="text-xs text-zinc-400 font-mono">Verifying Admin Credentials...</div>
       </div>
@@ -80,7 +60,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="space-y-2">
             <h1 className="text-2xl font-black text-white uppercase tracking-tight">Admin Authorization Required</h1>
             <p className="text-xs text-zinc-400 leading-relaxed">
-              This control panel is restricted exclusively to authorized <strong className="text-amber-400">Shaswat Ecom</strong> administrators.
+              This control panel is restricted exclusively to authorized <strong className="text-amber-400">Manoj Traders</strong> administrators.
             </p>
             {userEmail ? (
               <div className="mt-3 p-3 rounded-2xl bg-zinc-950 border border-zinc-800 text-xs font-mono text-zinc-400">
