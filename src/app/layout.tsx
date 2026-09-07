@@ -25,6 +25,12 @@ export const metadata: Metadata = {
   keywords: ["Shaswat Ecom", "Organic Supermarket", "Basmati Rice", "A2 Ghee", "Fresh Mangoes", "Cold Pressed Oil"],
   authors: [{ name: "Shaswat Ecom" }],
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/icon.svg",
+  },
   openGraph: {
     type: "website",
     locale: "en_IN",
