@@ -11,20 +11,20 @@ export default function Icon() {
     (
       <div
         style={{
-          fontSize: 20,
-          background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+          fontSize: 16,
+          background: "linear-gradient(135deg, #F59E0B 0%, #D97706 100%)",
           width: "100%",
           height: "100%",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          color: "white",
+          color: "#09090b",
           borderRadius: "8px",
-          fontWeight: 800,
+          fontWeight: 900,
           fontFamily: "sans-serif",
         }}
       >
-        S
+        MT
       </div>
     ),
     {

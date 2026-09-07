@@ -87,15 +87,15 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-amber-500 flex items-center justify-center text-zinc-950 font-black text-xl shadow-md group-hover:scale-105 transition-transform">
-              S
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center text-zinc-950 font-black text-xl shadow-md group-hover:scale-105 transition-transform">
+              MT
             </div>
             <div className="flex flex-col">
               <span className="font-black text-lg tracking-tight uppercase text-zinc-900 dark:text-white leading-none">
-                SHASWAT ECOM
+                MANOJ TRADERS
               </span>
-              <span className="text-[10px] tracking-widest text-emerald-600 dark:text-amber-400 font-bold uppercase mt-0.5">
-                Fresh Groceries. Trusted Service.
+              <span className="text-[10px] tracking-widest text-amber-500 dark:text-amber-400 font-bold uppercase mt-0.5">
+                Quality Products. Trusted Service.
               </span>
             </div>
           </Link>

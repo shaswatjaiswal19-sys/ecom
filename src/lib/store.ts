@@ -8,7 +8,35 @@ const safeLocalStorage = {
   getItem: (key: string): string | null => {
     if (typeof window === "undefined") return null;
     try {
-      return window.localStorage.getItem(key);
+      const val = window.localStorage.getItem(key);
+      if (val) return val;
+
+      // Migration fallback for products: check both manoj-traders and shaswat-ecom keys
+      if (key.includes("products-storage")) {
+        return (
+          window.localStorage.getItem("manoj-traders-products-storage") ||
+          window.localStorage.getItem("shaswat-ecom-products-storage") ||
+          window.localStorage.getItem("manoj-products") ||
+          null
+        );
+      }
+      // Migration fallback for categories
+      if (key.includes("categories-storage")) {
+        return (
+          window.localStorage.getItem("manoj-traders-categories-storage") ||
+          window.localStorage.getItem("shaswat-ecom-categories-storage") ||
+          null
+        );
+      }
+      // Migration fallback for orders
+      if (key.includes("orders-storage")) {
+        return (
+          window.localStorage.getItem("manoj-traders-orders-storage") ||
+          window.localStorage.getItem("shaswat-ecom-orders-storage") ||
+          null
+        );
+      }
+      return null;
     } catch {
       return null;
     }
@@ -17,6 +45,19 @@ const safeLocalStorage = {
     if (typeof window !== "undefined") {
       try {
         window.localStorage.setItem(key, value);
+        // Dual-write to guarantee backwards compatibility
+        if (key.includes("products-storage")) {
+          window.localStorage.setItem("manoj-traders-products-storage", value);
+          window.localStorage.setItem("shaswat-ecom-products-storage", value);
+        }
+        if (key.includes("categories-storage")) {
+          window.localStorage.setItem("manoj-traders-categories-storage", value);
+          window.localStorage.setItem("shaswat-ecom-categories-storage", value);
+        }
+        if (key.includes("orders-storage")) {
+          window.localStorage.setItem("manoj-traders-orders-storage", value);
+          window.localStorage.setItem("shaswat-ecom-orders-storage", value);
+        }
       } catch (e) {
         console.error("Failed to save to localStorage:", e);
       }
@@ -213,6 +254,7 @@ export const useCompareStore = create<CompareState>((set) => ({
 // Persistent Products Store
 interface ProductState {
   products: Product[];
+  setProducts: (products: Product[]) => void;
   addProduct: (product: Product) => void;
   updateProduct: (id: string, updatedProduct: Product) => void;
   deleteProduct: (id: string) => void;
@@ -223,6 +265,7 @@ export const useProductStore = create<ProductState>()(
   persist(
     (set) => ({
       products: MOCK_PRODUCTS,
+      setProducts: (products) => set({ products }),
       addProduct: (newProduct) => {
         // Also keep memory array updated
         const existingIdx = MOCK_PRODUCTS.findIndex((p) => p.id === newProduct.id);
@@ -254,7 +297,7 @@ export const useProductStore = create<ProductState>()(
       resetProducts: () => set({ products: MOCK_PRODUCTS }),
     }),
     {
-      name: "shaswat-ecom-products-storage",
+      name: "manoj-traders-products-storage",
       storage: createJSONStorage(() => safeLocalStorage),
     }
   )
@@ -305,7 +348,7 @@ export const useCategoryStore = create<CategoryState>()(
       resetCategories: () => set({ categories: MOCK_CATEGORIES }),
     }),
     {
-      name: "shaswat-ecom-categories-storage",
+      name: "manoj-traders-categories-storage",
       storage: createJSONStorage(() => safeLocalStorage),
     }
   )
@@ -346,7 +389,7 @@ export const useBrandStore = create<BrandState>()(
       resetBrands: () => set({ brands: MOCK_BRANDS }),
     }),
     {
-      name: "shaswat-ecom-brands-storage",
+      name: "manoj-traders-brands-storage",
       storage: createJSONStorage(() => safeLocalStorage),
     }
   )
@@ -416,7 +459,7 @@ export const useOrderStore = create<OrderState>()(
       resetOrders: () => set({ orders: MOCK_ORDERS }),
     }),
     {
-      name: "shaswat-ecom-orders-storage",
+      name: "manoj-traders-orders-storage",
       storage: createJSONStorage(() => safeLocalStorage),
     }
   )
@@ -439,7 +482,7 @@ export const useShippingStore = create<ShippingState>()(
       setFreeShippingThreshold: (threshold) => set({ freeShippingThreshold: threshold }),
     }),
     {
-      name: "shaswat-ecom-shipping-storage",
+      name: "manoj-traders-shipping-storage",
       storage: createJSONStorage(() => safeLocalStorage),
     }
   )

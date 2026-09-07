@@ -141,12 +141,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
           <Link href="/admin" onClick={() => setSidebarOpen(false)} className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-amber-500 flex items-center justify-center text-zinc-950 font-black text-lg shadow-md">
-              S
+              MT
             </div>
             <div>
-              <div className="text-sm font-black tracking-tight gold-gradient-text uppercase">Shaswat Ecom</div>
+              <div className="text-sm font-black tracking-tight gold-gradient-text uppercase">Manoj Traders</div>
               <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-1">
-                <Shield className="w-2.5 h-2.5 text-amber-500" /> Admin Supermarket
+                <Shield className="w-2.5 h-2.5 text-amber-500" /> Admin Console
               </div>
             </div>
           </Link>

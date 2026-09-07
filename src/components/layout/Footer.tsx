@@ -72,14 +72,14 @@ export default function Footer() {
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center text-zinc-950 font-black text-xl">
-              S
+              MT
             </div>
             <span className="font-bold text-xl tracking-tight gold-gradient-text uppercase">
-              SHASWAT ECOM
+              MANOJ TRADERS
             </span>
           </div>
           <p className="text-xs text-zinc-400 max-w-sm leading-relaxed">
-            Shaswat Ecom is India&apos;s trusted online supermarket for 100% farm-fresh organic produce, aged Basmati rice, A2 Gir cow ghee, cold-pressed oils, and heritage spices.
+            Manoj Traders is India&apos;s trusted destination for 100% farm-fresh organic produce, aged Basmati rice, A2 Gir cow ghee, cold-pressed oils, and heritage spices.
           </p>
 
           {/* Newsletter Box */}
@@ -131,7 +131,7 @@ export default function Footer() {
 
         {/* Company */}
         <div>
-          <h4 className="text-xs font-bold uppercase tracking-wider text-amber-400 mb-4">Shaswat Ecom</h4>
+          <h4 className="text-xs font-bold uppercase tracking-wider text-amber-400 mb-4">Manoj Traders</h4>
           <ul className="space-y-2.5 text-xs text-zinc-400">
             <li><Link href="/about" className="hover:text-white transition-colors">Our Story & Heritage</Link></li>
             <li><Link href="/blogs" className="hover:text-white transition-colors">Journal</Link></li>
@@ -145,7 +145,7 @@ export default function Footer() {
       {/* Bottom Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 border-t border-zinc-800 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
         <div className="flex items-center gap-2 text-center sm:text-left">
-          <span>© 2026 Shaswat Ecom. All rights reserved.</span>
+          <span>© 2026 Manoj Traders. All rights reserved.</span>
         </div>
         <div className="flex items-center gap-4 font-mono text-[11px]">
           <span>💳 Visa</span>

@@ -16,13 +16,14 @@ function sanitizeForFirestore<T>(data: T): T {
   );
 }
 
-// Helper function to race Firestore calls with instant fallback (0ms when mock, max 30ms when live)
+// Helper function to query Firestore with safe network fallback
 async function fetchWithInstantFallback<T>(firestoreCall: () => Promise<T>, fallback: T): Promise<T> {
   if (isMockFirebase) return fallback;
   try {
-    const timeout = new Promise<T>((resolve) => setTimeout(() => resolve(fallback), 30));
+    const timeout = new Promise<T>((resolve) => setTimeout(() => resolve(fallback), 10000));
     return await Promise.race([firestoreCall(), timeout]);
-  } catch {
+  } catch (error) {
+    console.warn("Firestore call error, falling back:", error);
     return fallback;
   }
 }

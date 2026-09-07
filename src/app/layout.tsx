@@ -11,19 +11,20 @@ import WishlistDrawer from "@/components/layout/WishlistDrawer";
 import MobileNav from "@/components/layout/MobileNav";
 import PWAInstallPrompt from "@/components/layout/PWAInstallPrompt";
 import WelcomeLoginModal from "@/components/layout/WelcomeLoginModal";
+import DataSyncProvider from "@/components/providers/DataSyncProvider";
 import { Toaster } from "react-hot-toast";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
   title: {
-    default: "SHASWAT ECOM | Fresh Groceries. Trusted Quality.",
-    template: "%s | SHASWAT ECOM",
+    default: "MANOJ TRADERS | Quality Products. Trusted Service.",
+    template: "%s | MANOJ TRADERS",
   },
   description:
-    "Shaswat Ecom — India's premier supermarket for 100% farm-fresh organic produce, aged Basmati rice, A2 Gir cow Bilona ghee, cold-pressed oils, and heritage spices delivered in 24 hours.",
-  keywords: ["Shaswat Ecom", "Organic Supermarket", "Basmati Rice", "A2 Ghee", "Fresh Mangoes", "Cold Pressed Oil"],
-  authors: [{ name: "Shaswat Ecom" }],
+    "Manoj Traders — India's premier supermarket for 100% farm-fresh organic produce, aged Basmati rice, A2 Gir cow Bilona ghee, cold-pressed oils, and heritage spices delivered in 24 hours.",
+  keywords: ["Manoj Traders", "Organic Supermarket", "Basmati Rice", "A2 Ghee", "Fresh Mangoes", "Cold Pressed Oil"],
+  authors: [{ name: "Manoj Traders" }],
   manifest: "/manifest.json",
   icons: {
     icon: [
@@ -58,14 +59,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ClerkProviderWrapper>
           <ThemeProvider>
             <QueryProvider>
-              <Navbar />
-              <main className="min-h-screen pb-20 lg:pb-0">{children}</main>
-              <Footer />
-              <CartDrawer />
-              <WishlistDrawer />
-              <MobileNav />
-              <PWAInstallPrompt />
-              <WelcomeLoginModal />
+              <DataSyncProvider>
+                <Navbar />
+                <main className="min-h-screen pb-20 lg:pb-0">{children}</main>
+                <Footer />
+                <CartDrawer />
+                <WishlistDrawer />
+                <MobileNav />
+                <PWAInstallPrompt />
+                <WelcomeLoginModal />
+              </DataSyncProvider>
               <Toaster
                 position="bottom-right"
                 toastOptions={{

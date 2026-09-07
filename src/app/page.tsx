@@ -30,23 +30,12 @@ import {
 import ProductCard from "@/components/shop/ProductCard";
 import QuickViewModal from "@/components/shop/QuickViewModal";
 import CountdownTimer from "@/components/shop/CountdownTimer";
-import { MOCK_CATEGORIES, MOCK_BRANDS } from "@/lib/mockData";
-import { useProductStore, useCategoryStore } from "@/lib/store";
+import Product360Viewer from "@/components/3d/Product360Viewer";
+import { MOCK_CATEGORIES, MOCK_BRANDS, MOCK_PRODUCTS } from "@/lib/mockData";
+import { useProductStore, useCategoryStore, useCartStore } from "@/lib/store";
 import { formatCurrency } from "@/lib/utils";
 import { Product } from "@/types";
-
-// Dynamic 350° Kirana 3D Canvas
-const Kirana3DStoreCanvas = dynamic(() => import("@/components/3d/Kirana3DStoreCanvas"), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-[520px] sm:h-[580px] lg:h-[620px] rounded-3xl bg-gradient-to-b from-amber-500/10 via-zinc-900 to-zinc-950 flex flex-col items-center justify-center gap-3 border border-amber-500/20">
-      <div className="w-14 h-14 rounded-full border-4 border-amber-500/20 border-t-amber-500 animate-spin" />
-      <span className="text-xs font-bold text-amber-400 animate-pulse">
-        Loading 350° Kirana 3D Showcase...
-      </span>
-    </div>
-  ),
-});
+import toast from "react-hot-toast";
 
 const MARQUEE_ITEMS = [
   "🌾 100% Shudh A2 Gir Cow Bilona Ghee",
@@ -55,8 +44,8 @@ const MARQUEE_ITEMS = [
   "🌿 Cold-Pressed Mustard & Sesame Oil",
   "🫚 Organic Lakadong High-Curcumin Turmeric",
   "🍯 Himalayan Raw Unpasteurized Honey",
-  "🚚 24-Hour Express Doorstep Kirana Delivery",
-  "🛡️ Zero Pesticides & Direct Farm-Sourced",
+  "🚚 24-Hour Express Doorstep Delivery",
+  "🛡️ Manoj Traders Quality Guarantee",
 ];
 
 const KIRANA_PIPELINE = [
@@ -130,6 +119,7 @@ export default function HomePage() {
   const displayCategories = storeCategories.length ? storeCategories : MOCK_CATEGORIES;
   const flashSaleProducts = storeProducts.filter((p) => p.isFlashSale);
   const featuredProducts = storeProducts.filter((p) => p.isFeatured);
+  const heroProduct = storeProducts[0] || MOCK_PRODUCTS[0];
   const flashSaleEnd = "2026-12-31T23:59:59Z";
 
   return (
@@ -140,9 +130,9 @@ export default function HomePage() {
         className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-amber-400 to-emerald-500 origin-left z-50 shadow-sm"
       />
 
-      {/* ===== HERO SECTION WITH 350° 3D KIRANA ORBIT SHOWCASE ===== */}
-      <section ref={heroRef} className="relative min-h-[92vh] flex items-center overflow-hidden py-10 lg:py-16">
-        {/* Ambient Kirana Gold & Emerald Atmospheric Glows */}
+      {/* ===== HERO SECTION WITH 360° PRODUCT INSPECTION SHOWCASE ===== */}
+      <section ref={heroRef} className="relative min-h-[85vh] flex items-center overflow-hidden py-10 lg:py-14">
+        {/* Ambient Gold & Emerald Atmospheric Glows */}
         <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-transparent to-emerald-500/5 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900 pointer-events-none" />
         <div className="absolute top-1/4 right-0 w-[550px] h-[550px] rounded-full bg-amber-500/10 blur-[130px] pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-[450px] h-[450px] rounded-full bg-emerald-500/10 blur-[120px] pointer-events-none" />
@@ -160,13 +150,13 @@ export default function HomePage() {
           >
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-black tracking-wider uppercase shadow-xs">
               <Sparkles className="w-4 h-4 text-amber-500 animate-pulse" />
-              <span>India's Premier Organic Kirana Store</span>
+              <span>Manoj Traders — Quality Products. Trusted Service.</span>
             </div>
 
             <div className="space-y-4">
               <h1 className="text-4xl sm:text-6xl lg:text-6xl font-black tracking-tight leading-[1.08] text-zinc-900 dark:text-white">
-                Pure Kirana. <br />
-                <span className="gold-gradient-text">Farm Fresh Daily.</span>
+                Pure Quality. <br />
+                <span className="gold-gradient-text">Trusted Freshness.</span>
               </h1>
               <p className="text-zinc-600 dark:text-zinc-300 text-sm sm:text-base leading-relaxed max-w-lg">
                 Experience authentic purity — A2 Gir cow Bilona ghee, 2-year aged Royal Basmati rice, hand-picked Ratnagiri Alphonso mangoes, cold-pressed oils, and heritage spices delivered straight to your kitchen in 24 hours.
@@ -179,7 +169,7 @@ export default function HomePage() {
                 href="/shop"
                 className="px-7 py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-black text-sm transition-all shadow-xl shadow-amber-500/25 flex items-center gap-2 hover:gap-3 group"
               >
-                <span>Shop Kirana Essentials</span>
+                <span>Shop Quality Products</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link
@@ -191,38 +181,95 @@ export default function HomePage() {
               </Link>
             </div>
 
-            {/* Kirana Trust Badges */}
+            {/* Trust Badges */}
             <div className="grid grid-cols-3 gap-4 pt-6 border-t border-zinc-200 dark:border-zinc-800">
               <div className="space-y-0.5">
                 <div className="text-2xl font-black text-amber-500">24-Hr</div>
-                <div className="text-[11px] text-zinc-500 font-bold">Express Kirana</div>
+                <div className="text-[11px] text-zinc-500 font-bold">Express Delivery</div>
               </div>
               <div className="space-y-0.5">
                 <div className="text-2xl font-black text-emerald-500">100%</div>
-                <div className="text-[11px] text-zinc-500 font-bold">Shudh & Organic</div>
+                <div className="text-[11px] text-zinc-500 font-bold">Certified Organic</div>
               </div>
               <div className="space-y-0.5">
                 <div className="text-2xl font-black text-amber-500">500K+</div>
-                <div className="text-[11px] text-zinc-500 font-bold">Happy Homes</div>
+                <div className="text-[11px] text-zinc-500 font-bold">Happy Families</div>
               </div>
             </div>
           </motion.div>
 
-          {/* Right 350° 3D Kirana Orbit Canvas (7 cols) */}
+          {/* Right Featured Product Showcase Card (7 cols) */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.92 }}
+            initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.9, delay: 0.15, ease: "easeOut" }}
+            transition={{ duration: 0.8, delay: 0.15, ease: "easeOut" }}
             className="lg:col-span-7 w-full"
           >
-            <Kirana3DStoreCanvas />
+            <div className="relative rounded-3xl bg-zinc-900/90 border border-amber-500/20 backdrop-blur-xl p-6 sm:p-8 shadow-2xl overflow-hidden">
+              <div className="flex items-center justify-between pb-4 border-b border-zinc-800">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-amber-400">Featured Flagship Product</span>
+                </div>
+                <span className="text-xs font-mono text-zinc-400 bg-zinc-800 px-2.5 py-1 rounded-full">Interactive 360° Inspection</span>
+              </div>
+
+              {/* 360 Viewer */}
+              <div className="py-4">
+                <Product360Viewer
+                  images={heroProduct?.images?.length ? heroProduct.images : [
+                    "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&q=80&w=800",
+                    "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&q=80&w=800"
+                  ]}
+                  productName={heroProduct?.name || "Manoj Royal Basmati Rice"}
+                />
+              </div>
+
+              {/* Product Info Bar */}
+              <div className="pt-4 border-t border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-bold text-white line-clamp-1">
+                    {heroProduct?.name || "Manoj Royal 2-Year Aged Extra Long Basmati Rice (5kg)"}
+                  </h3>
+                  <div className="flex items-center gap-2 text-xs text-zinc-400 mt-1">
+                    <span className="text-amber-400 font-semibold">★ {heroProduct?.rating || 4.9}</span>
+                    <span>({heroProduct?.reviewCount || 384} reviews)</span>
+                    <span>•</span>
+                    <span className="text-emerald-400 font-semibold">In Stock</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <div className="text-right">
+                    <div className="text-xl font-black text-amber-400">
+                      {formatCurrency(heroProduct?.price || 999)}
+                    </div>
+                    <div className="text-xs text-zinc-500 line-through">
+                      {formatCurrency(heroProduct?.mrp || 1399)}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (heroProduct) {
+                        useCartStore.getState().addToCart(heroProduct);
+                        toast.success("Added to shopping cart!");
+                      }
+                    }}
+                    className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs transition-colors flex items-center gap-1.5 shadow-lg shadow-amber-500/20"
+                  >
+                    <ShoppingBag className="w-4 h-4" />
+                    <span>Add to Cart</span>
+                  </button>
+                </div>
+              </div>
+            </div>
           </motion.div>
         </motion.div>
       </section>
 
-      {/* ===== CONTINUOUS MOVING KIRANA MARQUEE TICKER (Slow & Smooth) ===== */}
+      {/* ===== CONTINUOUS MOVING MARQUEE TICKER ===== */}
       <div className="relative py-3.5 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-zinc-950 font-black text-xs uppercase tracking-wider overflow-hidden shadow-md">
-        <div className="animate-kirana-marquee whitespace-nowrap gap-8 font-extrabold cursor-default">
+        <div className="flex whitespace-nowrap gap-8 font-extrabold cursor-default">
           {MARQUEE_ITEMS.concat(MARQUEE_ITEMS).map((item, idx) => (
             <span key={idx} className="flex items-center gap-3 pr-8">
               <span>{item}</span>
@@ -232,13 +279,13 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ===== FEATURED KIRANA AISLES ===== */}
+      {/* ===== FEATURED AISLES ===== */}
       <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div className="space-y-1">
             <span className="text-xs font-black uppercase tracking-wider text-amber-500">Farm Direct Supermarket</span>
             <h2 className="text-3xl sm:text-4xl font-black text-zinc-900 dark:text-white">
-              Explore Kirana Aisles
+              Explore Premium Aisles
             </h2>
           </div>
           <Link href="/shop" className="text-xs font-bold text-amber-500 hover:underline flex items-center gap-1">
@@ -354,7 +401,7 @@ export default function HomePage() {
           <div className="space-y-1">
             <span className="text-xs font-black uppercase tracking-wider text-amber-500">Customer Favorites</span>
             <h2 className="text-3xl sm:text-4xl font-black text-zinc-900 dark:text-white">
-              Best Selling Kirana Staples
+              Best Selling Organic Staples
             </h2>
           </div>
           <Link href="/shop?filter=best-sellers" className="text-xs font-bold text-amber-500 hover:underline flex items-center gap-1">
@@ -377,7 +424,7 @@ export default function HomePage() {
       {/* ===== FAQ SECTION ===== */}
       <section className="py-20 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="text-center space-y-3">
-          <h2 className="text-3xl font-black text-zinc-900 dark:text-white">Kirana Supermarket FAQ</h2>
+          <h2 className="text-3xl font-black text-zinc-900 dark:text-white">Manoj Traders FAQ</h2>
           <p className="text-zinc-500 dark:text-zinc-400 text-sm">
             Answers to common questions about fresh organic deliveries, sourcing, and returns.
           </p>
