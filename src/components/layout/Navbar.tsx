@@ -25,7 +25,7 @@ import {
   Package,
   LogOut,
 } from "lucide-react";
-import { useUser } from "@clerk/nextjs";
+import { useUser, UserButton } from "@clerk/nextjs";
 import { useAuthStore } from "@/lib/authStore";
 import { isClerkUserAdmin } from "@/lib/adminAuth";
 import toast from "react-hot-toast";
