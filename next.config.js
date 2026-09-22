@@ -2,7 +2,7 @@
 // This file mirrors the TypeScript config in next.config.ts
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  outputFileTracingRoot: __dirname,
+  outputFileTracingRoot: process.cwd(),
   transpilePackages: ["three", "@react-three/fiber", "@react-three/drei"],
   images: {
     unoptimized: true,

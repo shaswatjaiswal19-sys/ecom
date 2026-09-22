@@ -6,15 +6,11 @@ import ClerkProviderWrapper from "@/components/providers/ClerkProviderWrapper";
 import QueryProvider from "@/components/providers/QueryProvider";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import CartDrawer from "@/components/layout/CartDrawer";
-import WishlistDrawer from "@/components/layout/WishlistDrawer";
-import MobileNav from "@/components/layout/MobileNav";
-import PWAInstallPrompt from "@/components/layout/PWAInstallPrompt";
-import WelcomeLoginModal from "@/components/layout/WelcomeLoginModal";
+import ClientLayoutWidgets from "@/components/layout/ClientLayoutWidgets";
 import DataSyncProvider from "@/components/providers/DataSyncProvider";
 import { Toaster } from "react-hot-toast";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 
 export const metadata: Metadata = {
   title: {
@@ -52,7 +48,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="alternate icon" href="/favicon.ico" />
         <meta name="theme-color" content="#D4AF37" />
       </head>
       <body className={`${inter.variable} font-sans antialiased`}>
@@ -63,11 +60,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <Navbar />
                 <main className="min-h-screen pb-20 lg:pb-0">{children}</main>
                 <Footer />
-                <CartDrawer />
-                <WishlistDrawer />
-                <MobileNav />
-                <PWAInstallPrompt />
-                <WelcomeLoginModal />
+                <ClientLayoutWidgets />
               </DataSyncProvider>
               <Toaster
                 position="bottom-right"

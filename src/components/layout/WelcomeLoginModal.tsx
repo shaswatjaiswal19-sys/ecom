@@ -17,7 +17,6 @@ import {
   Lock,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/authStore";
-import { signInWithFirebaseGoogle } from "@/lib/firebase";
 import toast from "react-hot-toast";
 
 export default function WelcomeLoginModal() {
@@ -81,6 +80,7 @@ export default function WelcomeLoginModal() {
 
   const handleFirebaseGoogleSignIn = async () => {
     try {
+      const { signInWithFirebaseGoogle } = await import("@/lib/firebase");
       const user = await signInWithFirebaseGoogle();
       login({
         id: user.uid,
