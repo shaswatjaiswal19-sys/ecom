@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { getProductsFromStore, createProductInFirestore, updateProductInFirestore, deleteProductInFirestore } from "@/lib/firestore";
 import { verifyAdminApi, unauthorizedResponse } from "@/lib/adminAuthServer";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 // GET /api/products - Returns list of products with optional category/search filtering (Public read)
 export async function GET(request: Request) {
   try {
@@ -13,14 +16,17 @@ export async function GET(request: Request) {
 
     if (category && category !== "all") {
       products = products.filter(
-        (p) => p.category.toLowerCase().replace(/[^a-z0-9]/g, "-") === category.toLowerCase().replace(/[^a-z0-9]/g, "-")
+        (p) => (p.category || "").toLowerCase().replace(/[^a-z0-9]/g, "-") === category.toLowerCase().replace(/[^a-z0-9]/g, "-")
       );
     }
 
     if (search) {
       const q = search.toLowerCase();
       products = products.filter(
-        (p) => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q)
+        (p) =>
+          (p.name || "").toLowerCase().includes(q) ||
+          (p.sku || "").toLowerCase().includes(q) ||
+          (p.brand || "").toLowerCase().includes(q)
       );
     }
 

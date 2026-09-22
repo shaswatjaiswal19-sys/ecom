@@ -27,8 +27,8 @@ function ProductDetailContent({ slug }: { slug: string }) {
 
   const { products } = useProductStore();
   const product =
-    products.find((p) => p.slug === slug) ||
-    MOCK_PRODUCTS.find((p) => p.slug === slug);
+    products.find((p) => p.slug === slug || p.id === slug) ||
+    MOCK_PRODUCTS.find((p) => p.slug === slug || p.id === slug);
 
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState(product?.variants?.[0]);

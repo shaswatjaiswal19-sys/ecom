@@ -18,9 +18,9 @@ export default function DataSyncProvider({ children }: { children: ReactNode }) 
           // Server / Firestore products
           json.products.forEach((p: Product) => mergedMap.set(p.id, p));
 
-          // Retain any locally created products from Admin Panel
+          // Retain any locally created products from Admin Panel (not default mock templates)
           currentLocal.forEach((p: Product) => {
-            if (!mergedMap.has(p.id)) {
+            if (!mergedMap.has(p.id) && !p.id.match(/^p[0-9]+$/)) {
               mergedMap.set(p.id, p);
             }
           });

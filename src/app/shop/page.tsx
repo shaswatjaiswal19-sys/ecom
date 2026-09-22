@@ -42,23 +42,23 @@ function ShopContent() {
       const q = search.toLowerCase();
       products = products.filter(
         (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.category.toLowerCase().includes(q) ||
-          p.brand.toLowerCase().includes(q) ||
-          p.tags.some((t) => t.toLowerCase().includes(q))
+          (p.name || "").toLowerCase().includes(q) ||
+          (p.category || "").toLowerCase().includes(q) ||
+          (p.brand || "").toLowerCase().includes(q) ||
+          (Array.isArray(p.tags) && p.tags.some((t) => (t || "").toLowerCase().includes(q)))
       );
     }
 
     if (selectedCategory) {
       products = products.filter(
         (p) =>
-          p.category.toLowerCase() === selectedCategory.toLowerCase() ||
-          p.category.toLowerCase().includes(selectedCategory.toLowerCase())
+          (p.category || "").toLowerCase() === selectedCategory.toLowerCase() ||
+          (p.category || "").toLowerCase().includes(selectedCategory.toLowerCase())
       );
     }
 
     if (selectedBrand) {
-      products = products.filter((p) => p.brand.toLowerCase().includes(selectedBrand.toLowerCase()));
+      products = products.filter((p) => (p.brand || "").toLowerCase().includes(selectedBrand.toLowerCase()));
     }
 
     if (inStockOnly) {

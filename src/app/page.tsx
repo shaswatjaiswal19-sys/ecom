@@ -117,8 +117,10 @@ export default function HomePage() {
   const heroY = useTransform(heroScroll, [0, 1], ["0%", "18%"]);
 
   const displayCategories = storeCategories.length ? storeCategories : MOCK_CATEGORIES;
-  const flashSaleProducts = storeProducts.filter((p) => p.isFlashSale);
-  const featuredProducts = storeProducts.filter((p) => p.isFeatured);
+  const flashSaleList = storeProducts.filter((p) => p.isFlashSale);
+  const flashSaleProducts = flashSaleList.length > 0 ? flashSaleList : storeProducts.slice(0, 4);
+  const featuredList = storeProducts.filter((p) => p.isFeatured);
+  const featuredProducts = featuredList.length > 0 ? featuredList : storeProducts;
   const heroProduct = storeProducts[0] || MOCK_PRODUCTS[0];
   const flashSaleEnd = "2026-12-31T23:59:59Z";
 

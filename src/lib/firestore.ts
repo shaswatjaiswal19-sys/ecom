@@ -1,4 +1,4 @@
-import { db, isMockFirebase } from "./firebase";
+import { db, isMockFirebase, firebaseConfig } from "./firebase";
 import {
   collection,
   getDocs,
@@ -16,7 +16,68 @@ function sanitizeForFirestore<T>(data: T): T {
   );
 }
 
-// Helper function to query Firestore with safe network fallback
+// Decode Firestore REST API field values into plain JavaScript types
+function parseFirestoreValue(val: any): any {
+  if (val === null || val === undefined) return null;
+  if (typeof val !== "object") return val;
+  if ("stringValue" in val) return val.stringValue;
+  if ("integerValue" in val) return Number(val.integerValue);
+  if ("doubleValue" in val) return Number(val.doubleValue);
+  if ("booleanValue" in val) return Boolean(val.booleanValue);
+  if ("nullValue" in val) return null;
+  if ("timestampValue" in val) return val.timestampValue;
+  if ("arrayValue" in val) {
+    const list = val.arrayValue?.values || [];
+    return list.map(parseFirestoreValue);
+  }
+  if ("mapValue" in val) {
+    const fields = val.mapValue?.fields || {};
+    const res: Record<string, any> = {};
+    for (const k of Object.keys(fields)) {
+      res[k] = parseFirestoreValue(fields[k]);
+    }
+    return res;
+  }
+  return val;
+}
+
+function parseFirestoreDoc<T>(doc: any): T {
+  const fields = doc.fields || {};
+  const res: Record<string, any> = {};
+  for (const k of Object.keys(fields)) {
+    res[k] = parseFirestoreValue(fields[k]);
+  }
+  if (!res.id && doc.name) {
+    const parts = doc.name.split("/");
+    res.id = parts[parts.length - 1];
+  }
+  return res as T;
+}
+
+// Direct Firestore REST API fetcher — guaranteed to work in Vercel serverless and browsers with zero socket overhead
+async function fetchCollectionViaRest<T>(collectionName: string): Promise<T[] | null> {
+  try {
+    const url = `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents/${collectionName}?key=${firebaseConfig.apiKey}&pageSize=300`;
+    const res = await fetch(url, {
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) {
+      console.warn(`Firestore REST fetch failed for ${collectionName}:`, res.status);
+      return null;
+    }
+    const data = await res.json();
+    if (!data.documents || !Array.isArray(data.documents) || data.documents.length === 0) {
+      return [];
+    }
+    return data.documents.map((doc: any) => parseFirestoreDoc<T>(doc));
+  } catch (err) {
+    console.warn(`Firestore REST fetch error for ${collectionName}:`, err);
+    return null;
+  }
+}
+
+// Helper function to query Firestore SDK with safe network fallback
 async function fetchWithInstantFallback<T>(firestoreCall: () => Promise<T>, fallback: T): Promise<T> {
   if (isMockFirebase) return fallback;
   try {
@@ -28,8 +89,26 @@ async function fetchWithInstantFallback<T>(firestoreCall: () => Promise<T>, fall
   }
 }
 
-// Products Firestore API - Instant 0ms response
+// Products Firestore API - Returns REAL production Firestore products
 export async function getProductsFromStore(): Promise<Product[]> {
+  // 1. Primary: Direct Firestore REST API query (stateless, fastest, 100% reliable in Vercel serverless)
+  try {
+    const restProducts = await fetchCollectionViaRest<Product>("products");
+    if (restProducts && restProducts.length > 0) {
+      return restProducts.map((p) => ({
+        ...p,
+        price: Number(p.price || 0),
+        mrp: Number(p.mrp || Number(p.price || 0) * 1.25),
+        stock: Number(p.stock || 0),
+        inStock: p.inStock ?? ((p.stock || 0) > 0),
+        images: Array.isArray(p.images) && p.images.length > 0 ? p.images : ["https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&q=80&w=800"],
+      }));
+    }
+  } catch (err) {
+    console.warn("REST products fetch error:", err);
+  }
+
+  // 2. Secondary: Firebase JS SDK query
   return fetchWithInstantFallback(async () => {
     const querySnapshot = await getDocs(collection(db, "products"));
     if (querySnapshot.empty) return MOCK_PRODUCTS;
@@ -42,7 +121,9 @@ export async function getProductsFromStore(): Promise<Product[]> {
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
-  const found = MOCK_PRODUCTS.find((p) => p.slug === slug);
+  // Check the real products first
+  const allProducts = await getProductsFromStore();
+  const found = allProducts.find((p) => p.slug === slug || p.id === slug);
   if (found) return found;
 
   return fetchWithInstantFallback(async () => {
@@ -56,8 +137,15 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
   }, null);
 }
 
-// Categories Firestore API - Instant 0ms response
+// Categories Firestore API
 export async function getCategoriesFromStore(): Promise<Category[]> {
+  try {
+    const restCategories = await fetchCollectionViaRest<Category>("categories");
+    if (restCategories && restCategories.length > 0) {
+      return restCategories;
+    }
+  } catch {}
+
   return fetchWithInstantFallback(async () => {
     const querySnapshot = await getDocs(collection(db, "categories"));
     if (querySnapshot.empty) return MOCK_CATEGORIES;
@@ -114,6 +202,13 @@ export async function deleteCategoryInFirestore(id: string): Promise<boolean> {
 
 // Brands Firestore API - Instant 0ms response
 export async function getBrandsFromStore(): Promise<Brand[]> {
+  try {
+    const restBrands = await fetchCollectionViaRest<Brand>("brands");
+    if (restBrands && restBrands.length > 0) {
+      return restBrands;
+    }
+  } catch {}
+
   return fetchWithInstantFallback(async () => {
     const querySnapshot = await getDocs(collection(db, "brands"));
     if (querySnapshot.empty) return MOCK_BRANDS;
@@ -233,6 +328,13 @@ export async function createOrderInStore(orderData: Partial<Order>): Promise<Ord
 }
 
 export async function getOrdersFromStore(): Promise<Order[]> {
+  try {
+    const restOrders = await fetchCollectionViaRest<Order>("orders");
+    if (restOrders && restOrders.length > 0) {
+      return restOrders;
+    }
+  } catch {}
+
   return fetchWithInstantFallback(async () => {
     const querySnapshot = await getDocs(collection(db, "orders"));
     if (querySnapshot.empty) return MOCK_ORDERS;
