@@ -7,6 +7,7 @@
 // Fallback authorized admin emails if no environment variable is set
 const DEFAULT_ADMIN_EMAILS = [
   "admin@manojtraders.com",
+  "shaswatuu2006@gmail.com",
   "shaswat@gmail.com",
   "shaswatjaiswal@gmail.com",
   "concierge@manojtraders.com",

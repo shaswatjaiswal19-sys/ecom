@@ -1,12 +1,10 @@
 "use client";
 
-import dynamic from "next/dynamic";
-
-const CartDrawer = dynamic(() => import("@/components/layout/CartDrawer"), { ssr: false });
-const WishlistDrawer = dynamic(() => import("@/components/layout/WishlistDrawer"), { ssr: false });
-const MobileNav = dynamic(() => import("@/components/layout/MobileNav"), { ssr: false });
-const PWAInstallPrompt = dynamic(() => import("@/components/layout/PWAInstallPrompt"), { ssr: false });
-const WelcomeLoginModal = dynamic(() => import("@/components/layout/WelcomeLoginModal"), { ssr: false });
+import CartDrawer from "@/components/layout/CartDrawer";
+import WishlistDrawer from "@/components/layout/WishlistDrawer";
+import MobileNav from "@/components/layout/MobileNav";
+import PWAInstallPrompt from "@/components/layout/PWAInstallPrompt";
+import WelcomeLoginModal from "@/components/layout/WelcomeLoginModal";
 
 export default function ClientLayoutWidgets() {
   return (
